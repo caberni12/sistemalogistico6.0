@@ -201,197 +201,69 @@ header button{
   <iframe id="frame"></iframe>
 </div>
 
+
 <script>
-  /* ========= CONFIG ========= */
-  const API = "https://script.google.com/macros/s/AKfycbzMad3A7vIO3nn-BXaNysrOcoFQtsWEdYe4kdALM52IY0nKoVaZ5zClEpqOk74ewW2b/exec";
-  
-  /* ========= SESIÓN ========= */
-  async function validarSesion(){
-    const token = localStorage.getItem("token");
-  
-    if(!token){
-      location.href="index.html";
-      return;
-    }
-  
-    try{
-      const r = await fetch(`${API}?action=verify&token=${token}`);
-      const res = await r.json();
-  
-      if(!res.valid){
-        localStorage.clear();
-        location.href="index.html";
-        return;
-      }
-  
-      const user = res.data;
-  
-      document.getElementById("usuario").innerHTML =
-        `👤 ${user.nombre} · ${user.rol}`;
-  
-      cargarModulos(user);
-  
-    }catch(err){
-      console.error(err);
-      location.href="index.html";
-    }
-  }
-  
-  /* ========= MODULOS ========= */
-  async function cargarModulos(user){
-  
-    const r = await fetch(`${API}?action=listarModulos`);
-    const res = await r.json();
-  
-    const panel = document.getElementById("panel");
-    panel.innerHTML = "";
-  
-    res.data.forEach(m=>{
-      const [id,nombre,archivo,icono,permiso,activo] = m;
-  
-      if(activo !== "SI") return;
-  
-      // ADMIN ve todo
-      if(user.rol !== "ADMIN" && !user.permisos.includes(permiso)) return;
-  
-      panel.innerHTML += `
-        <div class="card" onclick="abrir('${archivo}','${nombre}')">
-          <div class="card-icon">${icono || "📦"}</div>
-          <h3>${nombre}</h3>
-          <p>Módulo del sistema</p>
-        </div>
-      `;
-    });
-  }
-  
-  /* ========= VISOR ========= */
-  function abrir(url,titulo){
-    document.getElementById("panel").style.display="none";
-    document.getElementById("viewer").style.display="flex";
-    document.getElementById("frame").src=url;
-    document.getElementById("viewerTitle").textContent=titulo;
-  }
-  
-  function volver(){
-    document.getElementById("viewer").style.display="none";
-    document.getElementById("panel").style.display="grid";
-    document.getElementById("frame").src="";
-  }
-  
-  /* ========= LOGOUT ========= */
-  function cerrarSesion(){
-    localStorage.clear();
-    location.href="index.html";
-  }
-  
-  /* ========= INIT ========= */
-  validarSesion();
+document.addEventListener("DOMContentLoaded", async () => {
 
+  const user = await validarSesionGlobal();
+  if(!user) return;
 
-
-/* ========= RECARGAR PANEL (CON LOADER + IFRAME) ========= */
-async function recargarPanel(){
-
-const btn = document.getElementById("btnRecargar");
-const text = document.getElementById("recargarText");
-const loader = document.getElementById("recargarLoader");
-
-btn.classList.add("loading");
-text.style.display = "none";
-loader.style.display = "inline-block";
-
-try{
-  const token = localStorage.getItem("token");
-  if(!token) throw "sin sesión";
-
-  const r = await fetch(`${API}?action=verify&token=${token}`);
-  const res = await r.json();
-
-  if(!res.valid) throw "sesión inválida";
-
-  const user = res.data;
-
-  // 🔄 Recargar iframe si está abierto
-  const iframe = document.getElementById("frame");
-  if(iframe.src){
-    const current = iframe.src;
-    iframe.src = "";
-    setTimeout(()=> iframe.src = current, 50);
-  }
-
-  // 🔄 Recargar módulos
-  await cargarModulos(user);
-
-}catch(err){
-  console.error(err);
-  alert("No se pudo recargar el panel");
-  localStorage.clear();
-  location.href="index.html";
-}finally{
-  btn.classList.remove("loading");
-  text.style.display = "inline";
-  loader.style.display = "none";
-}
-}
-
-/* ========= RECARGAR COMPLETA (BOTÓN + LOADER + NAVEGADOR) ========= */
-async function recargarPanel(){
-
-const btn = document.getElementById("btnRecargar");
-const text = document.getElementById("recargarText");
-const loader = document.getElementById("recargarLoader");
-
-// Loader ON
-btn.classList.add("loading");
-text.style.display = "none";
-loader.style.display = "inline-block";
-
-try{
-  const token = localStorage.getItem("token");
-  if(!token) throw "sin sesión";
-
-  // 1️⃣ Validar sesión nuevamente (recarga navegador lógico)
-  const r = await fetch(`${API}?action=verify&token=${token}`);
-  const res = await r.json();
-  if(!res.valid) throw "sesión inválida";
-
-  const user = res.data;
-
-  // 2️⃣ Reset UI (navegador)
-  document.getElementById("viewer").style.display = "none";
-  document.getElementById("panel").style.display = "grid";
-  document.getElementById("viewerTitle").textContent = "";
-  document.getElementById("frame").src = "";
-
-  // 3️⃣ Actualizar header (usuario / rol)
   document.getElementById("usuario").innerHTML =
     `👤 ${user.nombre} · ${user.rol}`;
 
-  // 4️⃣ Recargar módulos
-  await cargarModulos(user);
+  cargarModulos(user);
+});
 
-  // 5️⃣ Recargar iframe si estaba abierto
-  const iframe = document.getElementById("frame");
-  if(iframe.dataset.lastSrc){
-    const src = iframe.dataset.lastSrc;
-    iframe.src = "";
-    setTimeout(()=> iframe.src = src, 50);
-    document.getElementById("viewer").style.display = "flex";
-    document.getElementById("panel").style.display = "none";
-  }
+/* ========= MODULOS ========= */
+async function cargarModulos(user){
 
-}catch(err){
-  console.error(err);
-  localStorage.clear();
-  location.href="index.html";
-}finally{
-  // Loader OFF
-  btn.classList.remove("loading");
-  text.style.display = "inline";
-  loader.style.display = "none";
+  const r = await fetch(
+    "https://script.google.com/macros/s/AKfycbzMad3A7vIO3nn-BXaNysrOcoFQtsWEdYe4kdALM52IY0nKoVaZ5zClEpqOk74ewW2b/exec",
+    {
+      method:"POST",
+      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+      body: JSON.stringify({ action:"listarModulos" })
+    }
+  );
+
+  const res = await r.json();
+
+  const panel = document.getElementById("panel");
+  panel.innerHTML = "";
+
+  res.data.forEach(m=>{
+    const [id,nombre,archivo,icono,permiso,activo] = m;
+    if(activo !== "SI") return;
+    if(user.rol !== "ADMIN" && !user.permisos.includes(permiso)) return;
+
+    panel.innerHTML += `
+      <div class="card" onclick="abrir('${archivo}','${nombre}')">
+        <div class="card-icon">${icono || "📦"}</div>
+        <h3>${nombre}</h3>
+        <p>Módulo del sistema</p>
+      </div>`;
+  });
 }
+
+/* ========= VISOR ========= */
+function abrir(url,titulo){
+  panel.style.display="none";
+  viewer.style.display="flex";
+  frame.src=url;
+  viewerTitle.textContent=titulo;
 }
-  </script>
+function volver(){
+  viewer.style.display="none";
+  panel.style.display="grid";
+  frame.src="";
+}
+
+/* ========= LOGOUT ========= */
+function cerrarSesion(){
+  cerrarSesionGlobal();
+}
+</script>
+
   
 <script src="app_pro.js"></script>
 <script src="segurity.js"></script>
@@ -399,5 +271,6 @@ try{
 
 </body>
 </html>
+
 
 
