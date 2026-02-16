@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Acceso de Usuario</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+  margin:0;
+  font-family:'Segoe UI',Arial;
+  background:linear-gradient(135deg,#cdcdce,#33768a);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+}
+
+.card{
+  background:#ffffff;
+  padding:45px 40px;
+  width:380px;
+  border-radius:20px;
+  box-shadow:0 30px 60px rgba(0,0,0,.25);
+  text-align:center;
+  animation:fade .4s ease;
+}
+
+@keyframes fade{
+  from{opacity:0; transform:translateY(10px)}
+  to{opacity:1; transform:translateY(0)}
+}
+
+h3{
+  margin-top:0;
+  margin-bottom:30px;
+  color:#1e293b;
+  font-weight:600;
+}
+
+.form-group{
+  display:flex;
+  justify-content:center;
+}
+
+input{
+  width:100%;
+  max-width:300px;
+  padding:12px 14px;
+  margin-bottom:18px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  font-size:14px;
+  text-align:center;
+  transition:.2s;
+}
+
+input:focus{
+  outline:none;
+  border-color:#3bdaf6;
+  box-shadow:0 0 0 3px rgba(59,130,246,.15);
+}
+
+button{
+  width:100%;
+  max-width:300px;
+  padding:12px;
+  border-radius:10px;
+  border:none;
+  background:#3bdaf6;
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  transition:.2s;
+  margin:0 auto;
+}
+
+button:disabled{
+  background:#94a3b8;
+  cursor:not-allowed;
+}
+
+button:hover:not(:disabled){
+  opacity:.9;
+}
+
+.loader{
+  width:16px;
+  height:16px;
+  border:3px solid #fff;
+  border-top:3px solid transparent;
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+  display:none;
+}
+
+@keyframes spin{
+  to{ transform:rotate(360deg) }
+}
+
+.msg{
+  margin-top:18px;
+  font-size:13px;
+  color:#ef4444;
+  min-height:18px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+  <h3>Acceso de Usuario</h3>
+
+  <div class="form-group">
+    <input id="user" placeholder="Usuario">
+  </div>
+
+  <div class="form-group">
+    <input id="pass" type="password" placeholder="Contraseña">
+  </div>
+
+  <button id="btnLogin" onclick="login()">
+    <span id="btnText">Ingresar</span>
+    <div class="loader" id="loader"></div>
+  </button>
+
+  <div class="msg" id="mensaje"></div>
+
+</div>
+
+<script>
+  const API = "https://script.google.com/macros/s/AKfycbzMad3A7vIO3nn-BXaNysrOcoFQtsWEdYe4kdALM52IY0nKoVaZ5zClEpqOk74ewW2b/exec";
+  
+  // ==========================
+  // Loader
+  // ==========================
+  function activarLoader(){
+    btnLogin.disabled = true;
+    loader.style.display = "block";
+    btnText.innerText = "Validando...";
+  }
+  
+  function desactivarLoader(){
+    btnLogin.disabled = false;
+    loader.style.display = "none";
+    btnText.innerText = "Ingresar";
+  }
+  
+  // ==========================
+  // LOGIN
+  // ==========================
+  async function login(){
+  
+    const username = user.value.trim();
+    const password = pass.value.trim();
+    mensaje.innerText = "";
+  
+    if(!username || !password){
+      mensaje.innerText = "Debe ingresar usuario y contraseña";
+      return;
+    }
+  
+    activarLoader();
+  
+    try{
+      const response = await fetch(API,{
+        method:"POST",
+        headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+        body:JSON.stringify({
+          action:"login",
+          username,
+          password
+        })
+      });
+  
+      const res = await response.json();
+  
+      if(res.ok){
+  
+        // 🔐 guardar sesión REAL
+        localStorage.setItem("token", res.token);
+        localStorage.setItem("usuario", res.data.user);
+        localStorage.setItem("nombre", res.data.nombre);
+        localStorage.setItem("rol", res.data.rol);
+        localStorage.setItem("permisos", JSON.stringify(res.data.permisos));
+  
+        document.body.style.opacity = "0";
+        document.body.style.transition = "opacity .3s ease";
+  
+        setTimeout(()=>{
+          window.location.href = "main.html";
+        },300);
+  
+      }else{
+        mensaje.innerText = res.msg || "Credenciales inválidas";
+        desactivarLoader();
+      }
+  
+    }catch(err){
+      mensaje.innerText = "Error de conexión con el servidor";
+      console.error(err);
+      desactivarLoader();
+    }
+  }
+  
+  // Enter para login
+  document.addEventListener("keydown", e=>{
+    if(e.key === "Enter") login();
+  });
+  </script>
+  
+<script src="segurity.js"></script>
+
+</body>
+</html>

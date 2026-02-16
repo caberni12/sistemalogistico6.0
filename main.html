@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Panel Logístico Integrado</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+:root{
+ --bg:#f1f5f9;
+ --card:#ffffff;
+ --hover:#f8fafc;
+ --text:#0f172a;
+ --muted:#64748b;
+ --accent:#14b8a6;
+ --border:#e2e8f0;
+ --danger:#ef4444;
+}
+
+*{ box-sizing:border-box; font-family:system-ui,Arial,sans-serif; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--text);
+ min-height:100vh;
+ display:flex;
+ flex-direction:column;
+}
+
+/* HEADER */
+header{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ padding:18px 22px;
+ background:#ffffff;
+ border-bottom:1px solid var(--border);
+ box-shadow:0 4px 12px rgba(0,0,0,.04);
+}
+
+header h1{
+ margin:0;
+ font-size:20px;
+ font-weight:700;
+}
+
+header .right{
+ display:flex;
+ gap:10px;
+ align-items:center;
+}
+
+header .user{
+ font-size:13px;
+ color:var(--muted);
+}
+
+header button{
+ background:var(--danger);
+ color:#fff;
+ border:none;
+ padding:8px 14px;
+ border-radius:8px;
+ cursor:pointer;
+ font-weight:600;
+}
+
+/* GRID */
+.grid{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+ gap:20px;
+ padding:28px;
+ max-width:1200px;
+ margin:auto;
+ width:100%;
+}
+
+/* CARD */
+.card{
+ background:var(--card);
+ border-radius:18px;
+ padding:26px;
+ text-align:center;
+ cursor:pointer;
+ transition:.25s ease;
+ border:1px solid var(--border);
+ box-shadow:0 6px 18px rgba(0,0,0,.06);
+}
+
+.card:hover{
+ background:var(--hover);
+ transform:translateY(-4px);
+ box-shadow:0 10px 28px rgba(0,0,0,.08);
+}
+
+.card-icon{ font-size:38px; margin-bottom:12px; }
+.card h3{ margin:8px 0 4px; font-size:16px; font-weight:600; }
+.card p{ font-size:13px; color:var(--muted); }
+
+/* VIEWER */
+.viewer{
+ display:none;
+ flex-direction:column;
+ height:100vh;
+ background:#ffffff;
+}
+
+.viewer-header{
+ background:#ffffff;
+ border-bottom:1px solid var(--border);
+ padding:12px 16px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ box-shadow:0 4px 12px rgba(0,0,0,.04);
+}
+
+.viewer-header span{ font-weight:600; }
+
+.viewer-header button{
+ background:var(--accent);
+ border:none;
+ padding:8px 14px;
+ border-radius:8px;
+ cursor:pointer;
+ color:#fff;
+ font-weight:600;
+}
+
+.viewer iframe{
+ flex:1;
+ border:none;
+ width:100%;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🚀 Sistema de Gestion Logistica AS</h1>
+  <div class="right">
+    <div id="usuario" class="user"></div>
+    
+    <button id="btnRecargar" onclick="recargarPanel()" style="background:#3b82f6;">
+      <span id="recargarText">⟳ Recargar</span>
+      <span id="recargarLoader" style="display:none;">⏳</span>
+    </button>
+    
+    <button onclick="cerrarSesion()">⏻ Cerrar Sesión</button>
+  </div>
+</header>
+
+<!-- PANEL DINÁMICO -->
+<div id="panel" class="grid"></div>
+
+<!-- VISOR -->
+<div id="viewer" class="viewer">
+  <div class="viewer-header">
+    <span id="viewerTitle"></span>
+    <button onclick="volver()">⬅ Volver</button>
+  </div>
+  <iframe id="frame"></iframe>
+</div>
+
+<script>
+  /* ========= CONFIG ========= */
+  const API = "https://script.google.com/macros/s/AKfycbzMad3A7vIO3nn-BXaNysrOcoFQtsWEdYe4kdALM52IY0nKoVaZ5zClEpqOk74ewW2b/exec";
+  
+  /* ========= SESIÓN ========= */
+  async function validarSesion(){
+    const token = localStorage.getItem("token");
+  
+    if(!token){
+      location.href="index.html";
+      return;
+    }
+  
+    try{
+      const r = await fetch(`${API}?action=verify&token=${token}`);
+      const res = await r.json();
+  
+      if(!res.valid){
+        localStorage.clear();
+        location.href="index.html";
+        return;
+      }
+  
+      const user = res.data;
+  
+      document.getElementById("usuario").innerHTML =
+        `👤 ${user.nombre} · ${user.rol}`;
+  
+      cargarModulos(user);
+  
+    }catch(err){
+      console.error(err);
+      location.href="index.html";
+    }
+  }
+  
+  /* ========= MODULOS ========= */
+  async function cargarModulos(user){
+  
+    const r = await fetch(`${API}?action=listarModulos`);
+    const res = await r.json();
+  
+    const panel = document.getElementById("panel");
+    panel.innerHTML = "";
+  
+    res.data.forEach(m=>{
+      const [id,nombre,archivo,icono,permiso,activo] = m;
+  
+      if(activo !== "SI") return;
+  
+      // ADMIN ve todo
+      if(user.rol !== "ADMIN" && !user.permisos.includes(permiso)) return;
+  
+      panel.innerHTML += `
+        <div class="card" onclick="abrir('${archivo}','${nombre}')">
+          <div class="card-icon">${icono || "📦"}</div>
+          <h3>${nombre}</h3>
+          <p>Módulo del sistema</p>
+        </div>
+      `;
+    });
+  }
+  
+  /* ========= VISOR ========= */
+  function abrir(url,titulo){
+    document.getElementById("panel").style.display="none";
+    document.getElementById("viewer").style.display="flex";
+    document.getElementById("frame").src=url;
+    document.getElementById("viewerTitle").textContent=titulo;
+  }
+  
+  function volver(){
+    document.getElementById("viewer").style.display="none";
+    document.getElementById("panel").style.display="grid";
+    document.getElementById("frame").src="";
+  }
+  
+  /* ========= LOGOUT ========= */
+  function cerrarSesion(){
+    localStorage.clear();
+    location.href="index.html";
+  }
+  
+  /* ========= INIT ========= */
+  validarSesion();
+
+
+
+/* ========= RECARGAR PANEL (CON LOADER + IFRAME) ========= */
+async function recargarPanel(){
+
+const btn = document.getElementById("btnRecargar");
+const text = document.getElementById("recargarText");
+const loader = document.getElementById("recargarLoader");
+
+btn.classList.add("loading");
+text.style.display = "none";
+loader.style.display = "inline-block";
+
+try{
+  const token = localStorage.getItem("token");
+  if(!token) throw "sin sesión";
+
+  const r = await fetch(`${API}?action=verify&token=${token}`);
+  const res = await r.json();
+
+  if(!res.valid) throw "sesión inválida";
+
+  const user = res.data;
+
+  // 🔄 Recargar iframe si está abierto
+  const iframe = document.getElementById("frame");
+  if(iframe.src){
+    const current = iframe.src;
+    iframe.src = "";
+    setTimeout(()=> iframe.src = current, 50);
+  }
+
+  // 🔄 Recargar módulos
+  await cargarModulos(user);
+
+}catch(err){
+  console.error(err);
+  alert("No se pudo recargar el panel");
+  localStorage.clear();
+  location.href="index.html";
+}finally{
+  btn.classList.remove("loading");
+  text.style.display = "inline";
+  loader.style.display = "none";
+}
+}
+
+/* ========= RECARGAR COMPLETA (BOTÓN + LOADER + NAVEGADOR) ========= */
+async function recargarPanel(){
+
+const btn = document.getElementById("btnRecargar");
+const text = document.getElementById("recargarText");
+const loader = document.getElementById("recargarLoader");
+
+// Loader ON
+btn.classList.add("loading");
+text.style.display = "none";
+loader.style.display = "inline-block";
+
+try{
+  const token = localStorage.getItem("token");
+  if(!token) throw "sin sesión";
+
+  // 1️⃣ Validar sesión nuevamente (recarga navegador lógico)
+  const r = await fetch(`${API}?action=verify&token=${token}`);
+  const res = await r.json();
+  if(!res.valid) throw "sesión inválida";
+
+  const user = res.data;
+
+  // 2️⃣ Reset UI (navegador)
+  document.getElementById("viewer").style.display = "none";
+  document.getElementById("panel").style.display = "grid";
+  document.getElementById("viewerTitle").textContent = "";
+  document.getElementById("frame").src = "";
+
+  // 3️⃣ Actualizar header (usuario / rol)
+  document.getElementById("usuario").innerHTML =
+    `👤 ${user.nombre} · ${user.rol}`;
+
+  // 4️⃣ Recargar módulos
+  await cargarModulos(user);
+
+  // 5️⃣ Recargar iframe si estaba abierto
+  const iframe = document.getElementById("frame");
+  if(iframe.dataset.lastSrc){
+    const src = iframe.dataset.lastSrc;
+    iframe.src = "";
+    setTimeout(()=> iframe.src = src, 50);
+    document.getElementById("viewer").style.display = "flex";
+    document.getElementById("panel").style.display = "none";
+  }
+
+}catch(err){
+  console.error(err);
+  localStorage.clear();
+  location.href="index.html";
+}finally{
+  // Loader OFF
+  btn.classList.remove("loading");
+  text.style.display = "inline";
+  loader.style.display = "none";
+}
+}
+  </script>
+  
+<script src="app_pro.js"></script>
+<script src="segurity.js"></script>
+
+</body>
+</html>
+
+
