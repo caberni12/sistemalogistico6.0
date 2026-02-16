@@ -6,7 +6,7 @@
 ===================================================== */
 
 const API_AUTH =
-  "";
+  "https://script.google.com/macros/s/AKfycbzMad3A7vIO3nn-BXaNysrOcoFQtsWEdYe4kdALM52IY0nKoVaZ5zClEpqOk74ewW2b/exec";
 
 const LOGIN_PAGE = "index.html";
 let AUTH_USER = null;
