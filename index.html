@@ -1,146 +1,82 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Acceso de Usuario</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+/* =====================================================
+   AUTO.JS — VALIDACIÓN DE SESIÓN (FINAL)
+===================================================== */
 
-<style>
-body{
-  margin:0;
-  font-family:'Segoe UI',Arial;
-  background:linear-gradient(135deg,#cdcdce,#33768a);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
-}
-.card{
-  background:#fff;
-  padding:45px 40px;
-  width:380px;
-  border-radius:20px;
-  box-shadow:0 30px 60px rgba(0,0,0,.25);
-  text-align:center;
-}
-h3{margin:0 0 30px;color:#1e293b;font-weight:600}
-.form-group{display:flex;justify-content:center}
-input{
-  width:100%;max-width:300px;padding:12px 14px;margin-bottom:18px;
-  border-radius:10px;border:1px solid #ddd;font-size:14px;text-align:center
-}
-input:focus{
-  outline:none;border-color:#3bdaf6;box-shadow:0 0 0 3px rgba(59,130,246,.15)
-}
-button{
-  width:100%;max-width:300px;padding:12px;border-radius:10px;border:none;
-  background:#3bdaf6;color:#fff;font-weight:600;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto
-}
-button:disabled{background:#94a3b8;cursor:not-allowed}
-.loader{
-  width:16px;height:16px;border:3px solid #fff;border-top:3px solid transparent;
-  border-radius:50%;animation:spin .7s linear infinite;display:none
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-.msg{margin-top:18px;font-size:13px;color:#ef4444;min-height:18px}
-</style>
-</head>
+const API_AUTH =
+"https://script.google.com/macros/s/AKfycbxhJp4ZFqq4TwBKO29WXCEtS8dRVCs1gyDiK2CfgRKbWN5pjqd4PRdE9FJaXAF5fnXM/exec";
 
-<body>
-<div class="card">
-  <h3>Acceso de Usuario</h3>
+const LOGIN_PAGE = "index.html";
+let AUTH_USER = null;
 
-  <div class="form-group">
-    <input id="user" placeholder="Usuario" autocomplete="username">
-  </div>
+async function validarSesionGlobal(requiredPerm = null){
 
-  <div class="form-group">
-    <input id="pass" type="password" placeholder="Contraseña" autocomplete="current-password">
-  </div>
+  if (location.pathname.endsWith(LOGIN_PAGE)) return null;
 
-  <button id="btnLogin" onclick="login()">
-    <span id="btnText">Ingresar</span>
-    <div class="loader" id="loader"></div>
-  </button>
-
-  <div class="msg" id="mensaje"></div>
-</div>
-
-<script>
-const API_LOGIN =
-  "https://script.google.com/macros/s/AKfycbzMad3A7vIO3nn-BXaNysrOcoFQtsWEdYe4kdALM52IY0nKoVaZ5zClEpqOk74ewW2b/exec";
-
-function activarLoader(){
-  btnLogin.disabled = true;
-  loader.style.display = "block";
-  btnText.innerText = "Validando...";
-}
-function desactivarLoader(){
-  btnLogin.disabled = false;
-  loader.style.display = "none";
-  btnText.innerText = "Ingresar";
-}
-
-async function login(){
-  const username = user.value.trim();
-  const password = pass.value.trim();
-  mensaje.innerText = "";
-
-  if(!username || !password){
-    mensaje.innerText = "Debe ingresar usuario y contraseña";
-    return;
+  const token = localStorage.getItem("token");
+  if (!token) {
+    redirigirLogin();
+    return null;
   }
 
-  activarLoader();
+  // 🛡️ Evitar doble validación post-login
+  if (localStorage.getItem("login_ok") === "1") {
+    localStorage.removeItem("login_ok");
+    return {
+      usuario: localStorage.getItem("usuario"),
+      nombre: localStorage.getItem("nombre"),
+      rol: localStorage.getItem("rol"),
+      permisos: JSON.parse(localStorage.getItem("permisos") || "[]")
+    };
+  }
 
   try{
-    const r = await fetch(API_LOGIN,{
+    const r = await fetch(API_AUTH,{
       method:"POST",
-      headers:{ "Content-Type":"application/json" },
+      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
       body: JSON.stringify({
-        action:"login",
-        username,
-        password
+        action:"verify",
+        token
       })
     });
 
     const res = await r.json();
 
-    if(!res.ok){
-      mensaje.innerText = res.msg || "Credenciales inválidas";
-      desactivarLoader();
-      return;
+    if(!res.valid){
+      limpiarSesion();
+      redirigirLogin();
+      return null;
     }
 
-    // 🔐 Guardar sesión
-    localStorage.setItem("token", res.token);
-    localStorage.setItem("usuario", res.data.user);
-    localStorage.setItem("nombre", res.data.nombre);
-    localStorage.setItem("rol", res.data.rol);
-    localStorage.setItem("permisos", JSON.stringify(res.data.permisos || []));
+    AUTH_USER = res.data;
 
-    // 🛡️ Marca para evitar doble validación en la primera carga
-    localStorage.setItem("login_ok", "1");
+    if(requiredPerm && AUTH_USER.rol !== "ADMIN"){
+      if(!AUTH_USER.permisos.includes(requiredPerm)){
+        alert("Acceso denegado");
+        redirigirLogin();
+        return null;
+      }
+    }
 
-    // Redirección
-    window.location.href = "main.html";
+    return AUTH_USER;
 
-  }catch(e){
-    console.error(e);
-    mensaje.innerText = "Error de conexión con el servidor";
-    desactivarLoader();
+  }catch(err){
+    console.error("AUTH ERROR", err);
+    redirigirLogin();
+    return null;
   }
 }
 
-document.addEventListener("keydown", e=>{
-  if(e.key === "Enter") login();
-});
-</script>
+function limpiarSesion(){
+  localStorage.clear();
+}
 
-<!-- segurity.js puede ir aquí si NO toca auth -->
-<script src="segurity.js"></script>
-<script src="auth.js"></script>
+function redirigirLogin(){
+  if (!location.pathname.endsWith(LOGIN_PAGE)) {
+    location.href = LOGIN_PAGE;
+  }
+}
 
-</body>
-</html>
+function cerrarSesionGlobal(){
+  limpiarSesion();
+  redirigirLogin();
+}
