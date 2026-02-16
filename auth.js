@@ -1,28 +1,33 @@
 /* =====================================================
-   AUTH.JS — VALIDACIÓN UNIVERSAL DE SESIÓN (FIX)
+   AUTO.JS — CONTROL DE SESIÓN (ESTABLE)
+   - Evita doble validación post-login
+   - Usa POST para verify
+   - No ejecuta en index.html
 ===================================================== */
 
-/* ========= CONFIG ========= */
-const API_AUTH = "https://script.google.com/macros/s/AKfycbxhJp4ZFqq4TwBKO29WXCEtS8dRVCs1gyDiK2CfgRKbWN5pjqd4PRdE9FJaXAF5fnXM/exec";
-const LOGIN_PAGE = "index.html";
+const API_AUTH =
+  "https://script.google.com/macros/s/AKfycbxhJp4ZFqq4TwBKO29WXCEtS8dRVCs1gyDiK2CfgRKbWN5pjqd4PRdE9FJaXAF5fnXM/exec";
 
-/* ========= ESTADO ========= */
+const LOGIN_PAGE = "index.html";
 let AUTH_USER = null;
 
 /* =====================================================
-   VALIDAR SESIÓN GLOBAL
+   VALIDAR SESIÓN
 ===================================================== */
 async function validarSesionGlobal(requiredPerm = null){
 
+  // ⛔ Nunca validar en login
+  if (location.pathname.endsWith(LOGIN_PAGE)) return null;
+
   const token = localStorage.getItem("token");
-  if(!token){
+  if (!token) {
     redirigirLogin();
     return null;
   }
 
-  /* 🛡️ TOLERANCIA POST-LOGIN (CRÍTICO) */
-  const loginTime = localStorage.getItem("login_time");
-  if(loginTime && Date.now() - loginTime < 2000){
+  // 🛡️ Evitar doble validación inmediata tras login
+  if (localStorage.getItem("login_ok") === "1") {
+    localStorage.removeItem("login_ok");
     return {
       usuario: localStorage.getItem("usuario"),
       nombre: localStorage.getItem("nombre"),
@@ -31,21 +36,30 @@ async function validarSesionGlobal(requiredPerm = null){
     };
   }
 
-  try{
-    const r = await fetch(`${API_AUTH}?action=verify&token=${token}`);
-    const res = await r.json();
+  // 🔒 Validación normal (recargas / navegación)
+  try {
+    const response = await fetch(API_AUTH, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "verify",
+        token
+      })
+    });
 
-    if(!res.valid){
+    const res = await response.json();
+
+    if (!res.valid) {
       limpiarSesion();
       redirigirLogin();
       return null;
     }
 
     AUTH_USER = res.data;
-    localStorage.removeItem("login_time");
 
-    if(requiredPerm && AUTH_USER.rol !== "ADMIN"){
-      if(!AUTH_USER.permisos.includes(requiredPerm)){
+    // Validación de permisos si aplica
+    if (requiredPerm && AUTH_USER.rol !== "ADMIN") {
+      if (!AUTH_USER.permisos || !AUTH_USER.permisos.includes(requiredPerm)) {
         alert("Acceso denegado");
         redirigirLogin();
         return null;
@@ -54,8 +68,8 @@ async function validarSesionGlobal(requiredPerm = null){
 
     return AUTH_USER;
 
-  }catch(err){
-    console.error("AUTH ERROR", err);
+  } catch (err) {
+    console.error("AUTO AUTH ERROR:", err);
     redirigirLogin();
     return null;
   }
@@ -66,17 +80,21 @@ async function validarSesionGlobal(requiredPerm = null){
 ===================================================== */
 function limpiarSesion(){
   localStorage.removeItem("token");
-  localStorage.removeItem("login_time");
+  localStorage.removeItem("usuario");
+  localStorage.removeItem("nombre");
+  localStorage.removeItem("rol");
+  localStorage.removeItem("permisos");
+  localStorage.removeItem("login_ok");
 }
 
 function redirigirLogin(){
-  if(!location.pathname.endsWith(LOGIN_PAGE)){
+  if (!location.pathname.endsWith(LOGIN_PAGE)) {
     location.href = LOGIN_PAGE;
   }
 }
 
 /* =====================================================
-   CIERRE DE SESIÓN
+   LOGOUT
 ===================================================== */
 function cerrarSesionGlobal(){
   limpiarSesion();
