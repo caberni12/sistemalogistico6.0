@@ -1,15 +1,25 @@
 /* =====================================================
-   AUTO.JS — VALIDACIÓN DE SESIÓN (FINAL)
+   AUTH.JS — CONTROL TOTAL DE SESIÓN (FINAL)
+   Compatible con Google Apps Script
 ===================================================== */
 
+/* ========= CONFIG ========= */
 const API_AUTH =
-"https://script.google.com/macros/s/AKfycbxhJp4ZFqq4TwBKO29WXCEtS8dRVCs1gyDiK2CfgRKbWN5pjqd4PRdE9FJaXAF5fnXM/exec";
+  "https://script.google.com/macros/s/AKfycbzMad3A7vIO3nn-BXaNysrOcoFQtsWEdYe4kdALM52IY0nKoVaZ5zClEpqOk74ewW2b/exec";
 
 const LOGIN_PAGE = "index.html";
+
+/* ========= ESTADO ========= */
 let AUTH_USER = null;
 
-async function validarSesionGlobal(requiredPerm = null){
+/* =====================================================
+   VALIDAR SESIÓN GLOBAL
+   - Se ejecuta SOLO en páginas internas
+   - Una sola validación
+===================================================== */
+async function validarSesionGlobal(){
 
+  // ⛔ Nunca validar en login
   if (location.pathname.endsWith(LOGIN_PAGE)) return null;
 
   const token = localStorage.getItem("token");
@@ -18,27 +28,9 @@ async function validarSesionGlobal(requiredPerm = null){
     return null;
   }
 
-  // 🛡️ Evitar doble validación post-login
-  if (localStorage.getItem("login_ok") === "1") {
-    localStorage.removeItem("login_ok");
-    return {
-      usuario: localStorage.getItem("usuario"),
-      nombre: localStorage.getItem("nombre"),
-      rol: localStorage.getItem("rol"),
-      permisos: JSON.parse(localStorage.getItem("permisos") || "[]")
-    };
-  }
-
   try{
-    const r = await fetch(API_AUTH,{
-      method:"POST",
-      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
-      body: JSON.stringify({
-        action:"verify",
-        token
-      })
-    });
-
+    // 🔒 VERIFY (GET, como lo requiere tu GAS)
+    const r = await fetch(`${API_AUTH}?action=verify&token=${token}`);
     const res = await r.json();
 
     if(!res.valid){
@@ -47,27 +39,40 @@ async function validarSesionGlobal(requiredPerm = null){
       return null;
     }
 
-    AUTH_USER = res.data;
+    AUTH_USER = res.data || {};
 
-    if(requiredPerm && AUTH_USER.rol !== "ADMIN"){
-      if(!AUTH_USER.permisos.includes(requiredPerm)){
-        alert("Acceso denegado");
-        redirigirLogin();
-        return null;
+    // 🛡️ Asegurar permisos como array
+    if(typeof AUTH_USER.permisos === "string"){
+      try{
+        AUTH_USER.permisos = JSON.parse(AUTH_USER.permisos);
+      }catch{
+        AUTH_USER.permisos = [];
       }
+    }
+
+    if(!Array.isArray(AUTH_USER.permisos)){
+      AUTH_USER.permisos = [];
     }
 
     return AUTH_USER;
 
   }catch(err){
-    console.error("AUTH ERROR", err);
+    console.error("AUTH ERROR:", err);
     redirigirLogin();
     return null;
   }
 }
 
+/* =====================================================
+   UTILIDADES
+===================================================== */
 function limpiarSesion(){
-  localStorage.clear();
+  localStorage.removeItem("token");
+  localStorage.removeItem("usuario");
+  localStorage.removeItem("nombre");
+  localStorage.removeItem("rol");
+  localStorage.removeItem("permisos");
+  localStorage.removeItem("login_ok");
 }
 
 function redirigirLogin(){
@@ -76,7 +81,18 @@ function redirigirLogin(){
   }
 }
 
+/* =====================================================
+   LOGOUT GLOBAL
+===================================================== */
 function cerrarSesionGlobal(){
   limpiarSesion();
   redirigirLogin();
 }
+
+/* =====================================================
+   ACCESO RÁPIDO AL USUARIO (OPCIONAL)
+===================================================== */
+function getUsuarioActual(){
+  return AUTH_USER;
+}
+
