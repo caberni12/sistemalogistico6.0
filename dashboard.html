@@ -549,7 +549,7 @@ tbody tr:hover{
   /* ======================================================
      CONFIGURACIÓN
   ====================================================== */
-  const API = "https://script.google.com/macros/s/AKfycbyHL9hkDXLZZhhmtaQnJvK8Wnj4ghzqb4tPvnOPsU70VtmpGfT-_GAK92SV7ashVS621A/exec";
+  const API = "https://script.google.com/macros/s/AKfycbzOQTNU-zUBg3iI7QpXlnc6nPmr_1goAbo5_8Wviw8Y6QTgybWXr1KJeeU-7aqAfCba1A/exec";
   
   let RAW = [];
   let FILT = [];
@@ -735,12 +735,26 @@ render();
  /* ======================================================
      FOTOS
   ====================================================== */
-  function renderFotos(f){
-    if(!f) return "";
-    return String(f).split("|").map(u=>`
-      <img src="${u}" class="foto-thumb" onclick="openFoto('${u}')">
-    `).join("");
-  }
+ function renderFotos(f){
+  if(!f) return "";
+
+  return String(f)
+    .split("|")
+    .map(u => u.trim())
+    .filter(u => u && u.startsWith("http"))
+    .map(u => `
+      <img
+        src="${u}"
+        class="foto-thumb"
+        loading="lazy"
+        onclick="openFoto('${u}')"
+        onerror="this.style.display='none'"
+      >
+    `)
+    .join("");
+}
+
+
   
   function openFoto(url){
     currentFoto = url;
@@ -888,40 +902,53 @@ if(localStorage.getItem('kpiHidden') === '1'){
      GUARDAR
   ====================================================== */
   btnGuardar.onclick = async ()=>{
-    setLoading(btnGuardar,true);
-  
-    let foto64="";
-    if(mFotos.files[0]) foto64 = await toBase64(mFotos.files[0]);
-  
-    const payload={
-      action: EDIT?"update":"add",
-      row: EDIT?EDIT._row:null,
-      "PEDIDO":mPedido.value,
-      "CLIENTE":mCliente.value,
-      "DIRECCION":mDireccion.value,
-      "COMUNA":mComuna.value,
-      "TRANSPORTE":mTransporte.value,
-      "ETIQUETAS":mCajas.value,
-      "OBSERVACIONES":mObs.value,
-      "STATUS":mStatus.value,
-      "RESPONSABLE ENTREGA":mResponsable.value,
-      "HORA ENTREGA":mHoraEntrega.value,
-      "FOTO":foto64
-    };
-  
-    await fetch(API,{method:"POST",body:JSON.stringify(payload)});
-    setLoading(btnGuardar,false);
-    modalForm.style.display="none";
-    load();
-  };
-  
-  function toBase64(file){
-    return new Promise(r=>{
-      const fr=new FileReader();
-      fr.onload=()=>r(fr.result);
-      fr.readAsDataURL(file);
-    });
+  setLoading(btnGuardar, true);
+
+  // ===== convertir TODAS las fotos a base64 =====
+  let fotos64 = [];
+
+  if (mFotos.files.length > 0) {
+    for (const file of mFotos.files) {
+      fotos64.push(await toBase64(file));
+    }
   }
+
+  // ===== payload correcto =====
+  const payload = {
+    action: EDIT ? "update" : "add",
+    row: EDIT ? EDIT._row : null,
+    "PEDIDO": mPedido.value,
+    "CLIENTE": mCliente.value,
+    "DIRECCION": mDireccion.value,
+    "COMUNA": mComuna.value,
+    "TRANSPORTE": mTransporte.value,
+    "ETIQUETAS": mCajas.value,
+    "OBSERVACIONES": mObs.value,
+    "STATUS": mStatus.value,
+    "RESPONSABLE ENTREGA": mResponsable.value,
+    "HORA ENTREGA": mHoraEntrega.value,
+    "FOTO": fotos64       // 👈 ahora es ARRAY
+  };
+
+  await fetch(API, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+  setLoading(btnGuardar, false);
+  modalForm.style.display = "none";
+  load();
+};
+
+  
+ function toBase64(file){
+  return new Promise(r=>{
+    const fr = new FileReader();
+    fr.onload = ()=> r(fr.result);
+    fr.readAsDataURL(file);
+  });
+}
+
   
   /* ======================================================
      ELIMINAR
