@@ -3,6 +3,11 @@
    Compatible con Google Apps Script
 ===================================================== */
 
+if (location.pathname.endsWith("index.html")) {
+  console.warn("auth.js bloqueado en login");
+  throw new Error("auth.js no debe ejecutarse en index.html");
+}
+
 /* ========= CONFIG ========= */
 const API_AUTH =
   "https://script.google.com/macros/s/AKfycbzMad3A7vIO3nn-BXaNysrOcoFQtsWEdYe4kdALM52IY0nKoVaZ5zClEpqOk74ewW2b/exec";
