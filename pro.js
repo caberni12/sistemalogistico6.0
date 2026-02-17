@@ -772,6 +772,69 @@ window.addEventListener("beforeunload", e => {
 })();
 
 
+/* =====================================================
+   BOTÓN ⌨️ TECLADO – FIX DEFINITIVO (INFALIBLE)
+   ===================================================== */
+
+(function(){
+
+  let ultimoInput = null;
+
+  // envolvemos activarScan SIN romperlo
+  const activarScanOriginal = window.activarScan;
+
+  window.activarScan = function(tipo){
+    ultimoInput = tipo;
+    activarScanOriginal(tipo);
+    esperarOverlayYAgregarBoton();
+  };
+
+  function esperarOverlayYAgregarBoton(){
+
+    const box = document.getElementById("scannerBox");
+    if (!box) return;
+
+    // Observa SOLO este scannerBox
+    const observer = new MutationObserver(() => {
+
+      const overlay = box.querySelector(".scanner-overlay");
+      if (!overlay) return;
+
+      // si ya existe, no duplica
+      if (overlay.querySelector(".scanner-btn.keyboard")) {
+        observer.disconnect();
+        return;
+      }
+
+      // CREA BOTÓN ⌨️
+      const btn = document.createElement("button");
+      btn.className = "scanner-btn keyboard";
+      btn.textContent = "⌨️";
+
+      btn.onclick = () => {
+        cerrarScanner?.();
+        const input = document.getElementById(ultimoInput);
+        if (input) {
+          setTimeout(() => {
+            input.removeAttribute("readonly");
+            input.focus();
+          }, 150);
+        }
+      };
+
+      overlay.appendChild(btn);
+      observer.disconnect(); // YA ESTÁ
+    });
+
+    observer.observe(box, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+})();
+
+
 
 
 
