@@ -633,6 +633,65 @@ window.addEventListener("beforeunload", e => {
 
 
 
+/* =====================================================
+   FLUJO PRO INPUT ↔ SCANNER
+   1 TAP = TECLADO
+   2 TAP = SCANNER
+   ===================================================== */
+
+(function(){
+
+  const DOUBLE_TAP_DELAY = 350; // ms
+  let lastTap = 0;
+
+  function manejarTapInput(e){
+    const input = e.currentTarget;
+    const now = Date.now();
+    const diff = now - lastTap;
+    lastTap = now;
+
+    // === DOBLE TAP → SCANNER ===
+    if (diff < DOUBLE_TAP_DELAY) {
+      e.preventDefault();
+
+      // cerrar teclado
+      input.blur();
+
+      // activar scanner según input
+      if (input.id === "codigo") {
+        activarScan("codigo");
+      }
+
+      if (input.id === "ubicacion") {
+        activarScan("ubicacion");
+      }
+
+      return;
+    }
+
+    // === TAP SIMPLE → TECLADO ===
+    cerrarScanner?.(); // cierra scanner si está activo
+    input.removeAttribute("readonly");
+    input.focus();
+  }
+
+  function prepararInput(id){
+    const input = document.getElementById(id);
+    if (!input) return;
+
+    // editable por defecto
+    input.removeAttribute("readonly");
+
+    input.addEventListener("touchend", manejarTapInput);
+    input.addEventListener("click", manejarTapInput);
+  }
+
+  // aplica SOLO a los inputs que usan scanner
+  ["codigo", "ubicacion"].forEach(prepararInput);
+
+})();
+
+
 
 
 
