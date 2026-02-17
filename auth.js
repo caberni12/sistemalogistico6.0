@@ -10,7 +10,7 @@ if (location.pathname.endsWith("index.html")) {
 
 /* ========= CONFIG ========= */
 const API_AUTH =
-  "https://script.google.com/macros/s/AKfycbzMad3A7vIO3nn-BXaNysrOcoFQtsWEdYe4kdALM52IY0nKoVaZ5zClEpqOk74ewW2b/exec";
+  "https://script.google.com/macros/s/AKfycbwfykkQ5Ah7vtRddxTJV-KIJEqcdD3Swx7MXhSRnOfuc9NXYz_tiSBMSNVaFZKuAuRT/exec";
 
 const LOGIN_PAGE = "index.html";
 
