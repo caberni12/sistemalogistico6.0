@@ -629,3 +629,66 @@ window.addEventListener("beforeunload", e => {
     // el teclado aparece SOLO si el usuario toca el input
   });
 });
+
+/* =====================================================
+   FIX REAL – SCANNER ARRIBA / TECLADO ABAJO (SOLO JS)
+   ===================================================== */
+(function(){
+
+  if (!window.visualViewport) return;
+
+  let ajustando = false;
+
+  function asegurarScannerVisible(){
+
+    if (ajustando) return;
+    ajustando = true;
+
+    requestAnimationFrame(() => {
+
+      const box = document.getElementById("scannerBox");
+      if (!box) {
+        ajustando = false;
+        return;
+      }
+
+      const rect = box.getBoundingClientRect();
+      const vh = window.visualViewport.height;
+      const margen = 12;
+
+      // SOLO si el teclado tapa el scanner
+      if (rect.bottom > vh - margen) {
+
+        const delta = rect.bottom - vh + margen;
+
+        window.scrollBy({
+          top: delta,
+          behavior: "auto"
+        });
+      }
+
+      ajustando = false;
+    });
+  }
+
+  // Teclado aparece / desaparece
+  window.visualViewport.addEventListener("resize", asegurarScannerVisible);
+
+  // Usuario toca un input
+  document.addEventListener("focusin", e => {
+    if (e.target instanceof HTMLInputElement) {
+      setTimeout(asegurarScannerVisible, 120);
+    }
+  });
+
+  // Se engancha a TU activarScan sin romperlo
+  const activarOriginal = window.activarScan;
+  if (typeof activarOriginal === "function") {
+    window.activarScan = function(...args){
+      activarOriginal.apply(this, args);
+      setTimeout(asegurarScannerVisible, 180);
+    };
+  }
+
+})();
+
