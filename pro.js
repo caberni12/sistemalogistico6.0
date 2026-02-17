@@ -692,3 +692,49 @@ window.addEventListener("beforeunload", e => {
 
 })();
 
+
+/* =====================================================
+   DOBLE TAP PARA ESCRIBIR / TAP SIMPLE CIERRA TECLADO
+   ===================================================== */
+
+(function(){
+
+  let lastTapTime = 0;
+  const DOUBLE_TAP_DELAY = 300; // ms
+
+  function manejarTapInput(e){
+    const now = Date.now();
+    const diff = now - lastTapTime;
+    lastTapTime = now;
+
+    // DOBLE TAP → permitir escribir
+    if (diff < DOUBLE_TAP_DELAY) {
+      e.target.removeAttribute("readonly");
+      e.target.focus();
+    }
+    // TAP SIMPLE → bloquear escritura + cerrar teclado
+    else {
+      e.preventDefault();
+      e.target.setAttribute("readonly", "true");
+      e.target.blur();
+    }
+  }
+
+  function prepararInput(input){
+    if (!input) return;
+
+    // por defecto NO editable
+    input.setAttribute("readonly", "true");
+
+    // detectar taps
+    input.addEventListener("touchend", manejarTapInput);
+    input.addEventListener("click", manejarTapInput);
+  }
+
+  // aplica a tus inputs
+  ["codigo","descripcion","ubicacion","cantidad","operador"].forEach(id=>{
+    prepararInput(document.getElementById(id));
+  });
+
+})();
+
