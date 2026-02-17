@@ -21,11 +21,8 @@ function formatFecha(f){
   const d = new Date(f);
   if(isNaN(d)) return f;
   return d.toLocaleString('es-CL',{
-    day:'2-digit',
-    month:'short',
-    year:'numeric',
-    hour:'2-digit',
-    minute:'2-digit'
+    day:'2-digit', month:'short', year:'numeric',
+    hour:'2-digit', minute:'2-digit'
   });
 }
 
@@ -56,22 +53,22 @@ function buscarCodigo(){
   const sug  = document.getElementById('suggest');
 
   if(!cod){
-    desc.value = '';
-    sug.style.display = 'none';
+    desc.value='';
+    sug.style.display='none';
     return;
   }
 
   timerBuscar = setTimeout(()=>{
-    fetch(`${URL_GS}?accion=buscar&codigo=${encodeURIComponent(cod)}`)
+    fetch(`${URL_GS}?codigo=${encodeURIComponent(cod)}`)
       .then(r=>r.json())
       .then(d=>{
-        if(d.ok){
+        if(d && d.descripcion){
           desc.value = d.descripcion;
           sug.innerHTML = `
-            <div onclick="selectProducto('${d.codigo}','${d.descripcion}')">
-              ${d.codigo} – ${d.descripcion}
+            <div onclick="selectProducto('${cod}','${d.descripcion}')">
+              ${cod} – ${d.descripcion}
             </div>`;
-          sug.style.display = 'block';
+          sug.style.display='block';
         }else{
           desc.value='';
           sug.style.display='none';
@@ -91,18 +88,25 @@ function selectProducto(c,d){
 }
 
 /* =====================================================
-   LISTAR
+   CARGAR DATOS  (🔥 FIX DEFINITIVO)
 ===================================================== */
 function cargar(){
-  fetch(`${URL_GS}?accion=listar`)
+  fetch(URL_GS)
     .then(r=>r.json())
     .then(d=>{
-      DATA = d.data || [];
+      // ✔ soporta array directo o { data: [] }
+      DATA = Array.isArray(d) ? d : (d.data || []);
       renderTabla(DATA);
     })
-    .catch(()=>renderTabla([]));
+    .catch(()=>{
+      DATA = [];
+      renderTabla([]);
+    });
 }
 
+/* =====================================================
+   RENDER TABLA
+===================================================== */
 function renderTabla(arr){
   const t = document.getElementById('tabla');
   t.innerHTML = '';
@@ -134,7 +138,6 @@ function renderTabla(arr){
 let CANTIDAD_BASE = 0;
 
 function editar(r){
-
   abrirModal();
 
   CANTIDAD_BASE = Number(r[7]) || 0;
@@ -146,43 +149,34 @@ function editar(r){
   document.getElementById('codigo').value      = r[5];
   document.getElementById('descripcion').value = r[6];
 
-  // stock real
   document.getElementById('cantidad').value = CANTIDAD_BASE;
 
   document.getElementById('responsable').value = r[8];
   document.getElementById('status').value      = r[9];
   document.getElementById('origen').value      = r[10];
 
-  // reset movimiento
   document.getElementById('tipo_movimiento').value = '';
   document.getElementById('cantidad_mov').value = '';
-  document.getElementById('cantidad_mov').style.display = 'none';
-  document.getElementById('lblMovimiento').style.display = 'none';
+  document.getElementById('cantidad_mov').style.display='none';
+  document.getElementById('lblMovimiento').style.display='none';
   document.getElementById('btnEntrada').classList.remove('active');
   document.getElementById('btnSalida').classList.remove('active');
 }
 
 /* =====================================================
-   TIPO MOVIMIENTO
+   MOVIMIENTO
 ===================================================== */
 function setMovimiento(tipo){
-
   document.getElementById('tipo_movimiento').value = tipo;
-
-  document.getElementById('btnEntrada').classList.toggle(
-    'active', tipo === 'ENTRADA'
-  );
-  document.getElementById('btnSalida').classList.toggle(
-    'active', tipo === 'SALIDA'
-  );
-
-  document.getElementById('lblMovimiento').style.display = 'block';
-  document.getElementById('cantidad_mov').style.display = 'block';
+  document.getElementById('btnEntrada').classList.toggle('active', tipo==='ENTRADA');
+  document.getElementById('btnSalida').classList.toggle('active', tipo==='SALIDA');
+  document.getElementById('lblMovimiento').style.display='block';
+  document.getElementById('cantidad_mov').style.display='block';
   document.getElementById('cantidad_mov').focus();
 }
 
 /* =====================================================
-   GUARDAR (CÁLCULO FRONTEND)
+   GUARDAR
 ===================================================== */
 function guardar(){
 
@@ -190,46 +184,32 @@ function guardar(){
   const mov  = Number(document.getElementById('cantidad_mov').value || 0);
 
   if(!tipo) return alert('Seleccione ENTRADA o SALIDA');
-  if(mov <= 0) return alert('Ingrese cantidad válida');
+  if(mov<=0) return alert('Cantidad inválida');
 
   let cantidadFinal = CANTIDAD_BASE;
-
-  if(tipo === 'ENTRADA') cantidadFinal += mov;
-  if(tipo === 'SALIDA')  cantidadFinal -= mov;
-
-  if(cantidadFinal < 0) return alert('Stock insuficiente');
-
-  const payload = {
-    accion: 'editar',
-    id: document.getElementById('id').value,
-    codigo: normalizarCodigo(document.getElementById('codigo').value),
-    cantidad: cantidadFinal,
-    responsable: document.getElementById('responsable').value,
-    status: document.getElementById('status').value,
-    origen: ORIGEN
-  };
+  if(tipo==='ENTRADA') cantidadFinal += mov;
+  if(tipo==='SALIDA')  cantidadFinal -= mov;
+  if(cantidadFinal<0)  return alert('Stock insuficiente');
 
   fetch(URL_GS,{
     method:'POST',
-    body:JSON.stringify(payload)
+    body:JSON.stringify({
+      id:document.getElementById('id').value,
+      cantidad:cantidadFinal
+    })
   })
-  .then(()=>{
-    cerrarModal();
-    cargar();
-  })
-  .catch(()=>{
-    alert('Error al guardar');
-  });
+  .then(()=>{ cerrarModal(); cargar(); })
+  .catch(()=>alert('Error al guardar'));
 }
 
 /* =====================================================
    ELIMINAR
 ===================================================== */
 function eliminar(id){
-  if(!confirm('¿Eliminar este registro?')) return;
+  if(!confirm('¿Eliminar registro?')) return;
   fetch(URL_GS,{
     method:'POST',
-    body:JSON.stringify({accion:'eliminar',id})
+    body:JSON.stringify({ eliminar:id })
   }).then(cargar);
 }
 
@@ -238,9 +218,7 @@ function eliminar(id){
 ===================================================== */
 function filtrar(txt){
   txt = txt.toLowerCase();
-  renderTabla(
-    DATA.filter(r => r.join(' ').toLowerCase().includes(txt))
-  );
+  renderTabla(DATA.filter(r=>r.join(' ').toLowerCase().includes(txt)));
 }
 
 /* =====================================================
@@ -249,26 +227,21 @@ function filtrar(txt){
 function limpiarFormulario(){
   document.querySelectorAll('#modal input, #modal select')
     .forEach(i=>i.value='');
-  const s = document.getElementById('suggest');
-  if(s) s.style.display='none';
 }
 
 /* =====================================================
-   SCANNER + LINTERNA
+   SCANNER
 ===================================================== */
-let scanner = null;
-let torchOn = false;
+let scanner=null;
 
 function abrirScanner(){
   if(!/android|iphone|ipad|mobile/i.test(navigator.userAgent))
-    return alert('Scanner solo disponible en móvil');
+    return alert('Scanner solo móvil');
 
   document.getElementById('scannerBox').style.display='block';
-  document.getElementById('torchBtn').style.display='block';
-
   scanner = new Html5Qrcode('scannerBox');
   scanner.start(
-    { facingMode:{ exact:'environment' } },
+    { facingMode:{exact:'environment'} },
     { fps:10, qrbox:220 },
     txt=>{
       document.getElementById('codigo').value = txt.trim();
@@ -278,21 +251,12 @@ function abrirScanner(){
   );
 }
 
-function toggleTorch(){
-  if(!scanner) return;
-  torchOn = !torchOn;
-  scanner.applyVideoConstraints({ advanced:[{ torch: torchOn }] });
-  document.getElementById('torchBtn').classList.toggle('active', torchOn);
-}
-
 function cerrarScanner(){
   if(scanner){
     scanner.stop().then(()=>scanner.clear()).catch(()=>{});
-    scanner = null;
+    scanner=null;
   }
   document.getElementById('scannerBox').style.display='none';
-  document.getElementById('torchBtn').style.display='none';
-  torchOn = false;
 }
 
 /* =====================================================
