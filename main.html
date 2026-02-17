@@ -37,6 +37,8 @@ header{
  background:#ffffff;
  border-bottom:1px solid var(--border);
  box-shadow:0 4px 12px rgba(0,0,0,.04);
+ flex-wrap:wrap;
+ gap:12px;
 }
 
 header h1{
@@ -47,13 +49,15 @@ header h1{
 
 header .right{
  display:flex;
- gap:10px;
+ gap:14px;
  align-items:center;
+ flex-wrap:wrap;
 }
 
 header .user{
  font-size:13px;
  color:var(--muted);
+ line-height:1.4;
 }
 
 header button{
@@ -135,61 +139,44 @@ header button{
  width:100%;
 }
 
-/* ================= HEADER MÓVIL ================= */
+/* MOBILE */
 @media (max-width:768px){
-
   header{
     flex-direction:column;
     align-items:flex-start;
-    gap:12px;
-    padding:16px;
   }
-
-  header h1{
-    font-size:18px;
-    line-height:1.2;
-  }
-
+  header h1{ font-size:18px; }
   header .right{
     width:100%;
     flex-direction:column;
-    align-items:stretch;
-    gap:10px;
+    align-items:flex-start;
   }
-
-  header .user{
-    font-size:14px;
-    padding:6px 0;
-  }
-
   header button{
     width:100%;
     padding:14px;
-    font-size:15px;
     border-radius:12px;
   }
 }
-
 </style>
 </head>
 
 <body>
 
 <header>
-  <h1>🚀 Sistema de Gestion Logistica AS</h1>
+  <h1>🚀 Sistema de Gestión Logística AS</h1>
   <div class="right">
     <div id="usuario" class="user"></div>
-    
+    <div id="conexionInfo" class="user"></div>
+
     <button id="btnRecargar" onclick="recargarPanel()" style="background:#3b82f6;">
-      <span id="recargarText">⟳ Recargar</span>
-      <span id="recargarLoader" style="display:none;">⏳</span>
+      ⟳ Recargar
     </button>
-    
+
     <button onclick="cerrarSesion()">⏻ Cerrar Sesión</button>
   </div>
 </header>
 
-<!-- PANEL DINÁMICO -->
+<!-- PANEL -->
 <div id="panel" class="grid"></div>
 
 <!-- VISOR -->
@@ -201,156 +188,112 @@ header button{
   <iframe id="frame"></iframe>
 </div>
 
+<!-- ===================== JS ===================== -->
+
+<script src="auth.js"></script>
 
 <script>
-/* =====================================================
-   MAIN.JS — PANEL PRINCIPAL (FINAL)
-===================================================== */
-
 /* ========= CONFIG ========= */
 const API =
-  "https://script.google.com/macros/s/AKfycbzMad3A7vIO3nn-BXaNysrOcoFQtsWEdYe4kdALM52IY0nKoVaZ5zClEpqOk74ewW2b/exec";
+"https://script.google.com/macros/s/AKfycbzMad3A7vIO3nn-BXaNysrOcoFQtsWEdYe4kdALM52IY0nKoVaZ5zClEpqOk74ewW2b/exec";
 
-/* =====================================================
-   INIT
-===================================================== */
+let USER_IP = "cargando...";
+
+/* ========= INIT ========= */
 document.addEventListener("DOMContentLoaded", async () => {
 
-  // 🔐 validar sesión UNA sola vez (auth.js)
   const user = await validarSesionGlobal();
-  if (!user) return;
+  if(!user) return;
 
-  // Mostrar usuario
-  const userBox = document.getElementById("usuario");
-  if (userBox) {
-    userBox.innerHTML = `👤 ${user.nombre} · ${user.rol}`;
-  }
+  document.getElementById("usuario").innerHTML =
+    `👤 ${user.nombre} · ${user.rol}`;
 
-  // Cargar módulos
   cargarModulos(user);
+  obtenerIP();
+  iniciarReloj();
 });
 
-/* =====================================================
-   CARGAR MÓDULOS
-===================================================== */
+/* ========= MODULOS ========= */
 async function cargarModulos(user){
 
-  try{
-    const r = await fetch(`${API}?action=listarModulos`);
-    const res = await r.json();
+  const r = await fetch(`${API}?action=listarModulos`);
+  const res = await r.json();
 
-    const panel = document.getElementById("panel");
-    panel.innerHTML = "";
+  const panel = document.getElementById("panel");
+  panel.innerHTML = "";
 
-    if (!res.data || !Array.isArray(res.data)) {
-      panel.innerHTML = "<p>No hay módulos disponibles</p>";
-      return;
-    }
+  if(!res.data) return;
 
-    res.data.forEach(m => {
-      const [id, nombre, archivo, icono, permiso, activo] = m;
+  res.data.forEach(m=>{
+    const [id,nombre,archivo,icono,permiso,activo] = m;
 
-      if (activo !== "SI") return;
+    if(activo !== "SI") return;
+    if(user.rol !== "ADMIN" && !user.permisos.includes(permiso)) return;
 
-      // ADMIN ve todo
-      if (user.rol !== "ADMIN") {
-        if (!user.permisos || !user.permisos.includes(permiso)) return;
-      }
-
-      panel.innerHTML += `
-        <div class="card" onclick="abrirModulo('${archivo}','${nombre}')">
-          <div class="card-icon">${icono || "📦"}</div>
-          <h3>${nombre}</h3>
-          <p>Módulo del sistema</p>
-        </div>
-      `;
-    });
-
-  }catch(err){
-    console.error("Error cargando módulos", err);
-    alert("No se pudieron cargar los módulos");
-  }
+    panel.innerHTML += `
+      <div class="card" onclick="abrirModulo('${archivo}','${nombre}')">
+        <div class="card-icon">${icono || "📦"}</div>
+        <h3>${nombre}</h3>
+        <p>Módulo del sistema</p>
+      </div>
+    `;
+  });
 }
 
-/* =====================================================
-   VISOR DE MÓDULOS
-===================================================== */
-function abrirModulo(url, titulo){
-  const panel = document.getElementById("panel");
-  const viewer = document.getElementById("viewer");
-  const frame = document.getElementById("frame");
-  const title = document.getElementById("viewerTitle");
-
-  panel.style.display = "none";
-  viewer.style.display = "flex";
-  frame.src = url;
-  title.textContent = titulo;
+/* ========= VISOR ========= */
+function abrirModulo(url,titulo){
+  panel.style.display="none";
+  viewer.style.display="flex";
+  frame.src=url;
+  viewerTitle.textContent=titulo;
 }
 
 function volver(){
-  const panel = document.getElementById("panel");
-  const viewer = document.getElementById("viewer");
-  const frame = document.getElementById("frame");
-
-  viewer.style.display = "none";
-  panel.style.display = "grid";
-  frame.src = "";
+  viewer.style.display="none";
+  panel.style.display="grid";
+  frame.src="";
 }
 
-/* =====================================================
-   RECARGAR PANEL
-===================================================== */
+/* ========= RECARGAR ========= */
 async function recargarPanel(){
+  const user = await validarSesionGlobal();
+  if(!user) return;
+  volver();
+  cargarModulos(user);
+}
 
-  const btn = document.getElementById("btnRecargar");
-  const text = document.getElementById("recargarText");
-  const loader = document.getElementById("recargarLoader");
+/* ========= LOGOUT ========= */
+function cerrarSesion(){
+  cerrarSesionGlobal();
+}
 
-  if (btn) btn.disabled = true;
-  if (text) text.style.display = "none";
-  if (loader) loader.style.display = "inline";
+/* ========= FECHA / HORA / IP ========= */
+function iniciarReloj(){
+  actualizarConexion();
+  setInterval(actualizarConexion,1000);
+}
 
+function actualizarConexion(){
+  const now = new Date();
+  conexionInfo.innerHTML = `
+    📅 ${now.toLocaleDateString("es-CL")}<br>
+    ⏰ ${now.toLocaleTimeString("es-CL")}<br>
+    🌐 IP: ${USER_IP}
+  `;
+}
+
+async function obtenerIP(){
   try{
-    const user = await validarSesionGlobal();
-    if (!user) return;
-
-    // Reset visor
-    volver();
-
-    // Actualizar usuario
-    document.getElementById("usuario").innerHTML =
-      `👤 ${user.nombre} · ${user.rol}`;
-
-    // Recargar módulos
-    cargarModulos(user);
-
-  }catch(err){
-    console.error(err);
-    alert("No se pudo recargar el panel");
-  }finally{
-    if (btn) btn.disabled = false;
-    if (text) text.style.display = "inline";
-    if (loader) loader.style.display = "none";
+    const r = await fetch("https://api.ipify.org?format=json");
+    const d = await r.json();
+    USER_IP = d.ip;
+  }catch{
+    USER_IP = "no disponible";
   }
 }
-
-/* =====================================================
-   LOGOUT
-===================================================== */
-function cerrarSesion(){
-  cerrarSesionGlobal(); // viene desde auth.js
-}
-
 </script>
 
-  
-<script src="app_pro.js"></script>
 <script src="segurity.js"></script>
-<script src="auth.js"></script>
 
 </body>
 </html>
-
-
-
-
