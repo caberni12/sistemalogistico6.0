@@ -691,6 +691,86 @@ window.addEventListener("beforeunload", e => {
 
 })();
 
+/* =====================================================
+   BOTÓN ⌨️ TOGGLE TECLADO ⇄ SCANNER (FINAL)
+   ===================================================== */
+
+(function(){
+
+  let ultimoInputScanner = null;
+  let tecladoActivo = false;
+
+  /* ===== helpers ===== */
+  function bloquearInput(input){
+    input.setAttribute("readonly", "true");
+    input.blur();
+    tecladoActivo = false;
+  }
+
+  function habilitarInput(input){
+    input.removeAttribute("readonly");
+    input.focus();
+    tecladoActivo = true;
+  }
+
+  /* ===== envolver activarScan ===== */
+  const activarScanBase = window.activarScan;
+
+  window.activarScan = function(tipo){
+    ultimoInputScanner = tipo;
+    activarScanBase(tipo);
+    observarOverlayScanner();
+  };
+
+  /* ===== observar overlay del scanner ===== */
+  function observarOverlayScanner(){
+
+    const box = document.getElementById("scannerBox");
+    if (!box) return;
+
+    const observer = new MutationObserver(() => {
+
+      const overlay = box.querySelector(".scanner-overlay");
+      if (!overlay) return;
+
+      if (overlay.querySelector(".scanner-btn.keyboard")) return;
+
+      const btn = document.createElement("button");
+      btn.className = "scanner-btn keyboard";
+      btn.innerText = "⌨️";
+
+      btn.onclick = () => {
+
+        const input = document.getElementById(ultimoInputScanner);
+        if (!input) return;
+
+        // ===== TOGGLE =====
+        if (!tecladoActivo) {
+          // abrir teclado
+          cerrarScanner?.();
+          setTimeout(() => habilitarInput(input), 120);
+        } else {
+          // cerrar teclado y volver a scanner
+          bloquearInput(input);
+          setTimeout(() => activarScan(ultimoInputScanner), 120);
+        }
+      };
+
+      overlay.appendChild(btn);
+      observer.disconnect();
+    });
+
+    observer.observe(box, { childList:true, subtree:true });
+  }
+
+  /* ===== bloquear inputs por defecto ===== */
+  ["codigo","ubicacion"].forEach(id=>{
+    const input = document.getElementById(id);
+    if (input) bloquearInput(input);
+  });
+
+})();
+
 
 
 
