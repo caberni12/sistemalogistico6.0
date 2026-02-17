@@ -4,458 +4,11 @@
 <meta charset="UTF-8">
 <title>Ubicaciones PRO</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Scanner -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 
-<style>
-/* ================= RESET ================= */
-*{
-  box-sizing:border-box;
-  -webkit-tap-highlight-color:transparent;
-}
-input,button,select{
-  font-family:system-ui;
-  outline:none;
-}
-
-/* ================= VARIABLES ================= */
-:root{
-  --primary:#16a34a;
-  --accent:#14b8a6;
-  --danger:#ef4444;
-  --bg:#f4f6f8;
-  --card:#ffffff;
-  --text:#0f172a;
-  --muted:#6b7280;
-  --border:#e5e7eb;
-  --radius:18px;
-  --shadow:0 14px 36px rgba(0,0,0,.12);
-  --focus:0 0 0 4px rgba(20,184,166,.18);
-}
-
-/* ================= BODY ================= */
-body{
-  margin:0;
-  background:linear-gradient(180deg,#f8fafc,#eef2f7);
-  font-family:system-ui;
-  color:var(--text);
-}
-
-/* ================= HEADER ================= */
-header{
-  background:var(--card);
-  padding:16px;
-  font-size:18px;
-  font-weight:900;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  box-shadow:var(--shadow);
-  position:sticky;
-  top:0;
-  z-index:10;
-}
-header button{
-  border:none;
-  padding:10px 16px;
-  border-radius:14px;
-  background:linear-gradient(135deg,var(--primary),#22c55e);
-  color:#fff;
-  font-weight:900;
-  cursor:pointer;
-}
-
-/* ================= CARDS ================= */
-.card{
-  background:var(--card);
-  margin:14px;
-  padding:16px;
-  border-radius:24px;
-  box-shadow:var(--shadow);
-}
-
-/* ================= SEARCH ================= */
-.search{
-  width:100%;
-  padding:14px;
-  border-radius:14px;
-  border:2px solid var(--border);
-  font-size:15px;
-}
-.search:focus{
-  border-color:var(--accent);
-  box-shadow:var(--focus);
-}
-
-/* ================= TABLE ================= */
-.table-wrap{
-  max-height:65vh;
-  overflow-y:auto;
-}
-table{
-  width:100%;
-  border-collapse:separate;
-  border-spacing:0 8px;
-}
-thead th{
-  font-size:12px;
-  color:var(--muted);
-  padding:4px 6px;
-  text-align:left;
-}
-tbody tr{
-  background:#f9fafb;
-  transition:.15s;
-}
-tbody tr:hover{
-  background:#eefaf7;
-}
-tbody td{
-  padding:8px 6px;
-  font-size:13px;
-  white-space:nowrap;
-}
-
-/* ================= ACTIONS ================= */
-.actions-td{
-  display:flex;
-  gap:6px;
-}
-.actions-td button{
-  border:none;
-  padding:6px 10px;
-  border-radius:10px;
-  font-weight:800;
-  cursor:pointer;
-}
-.edit{
-  background:var(--accent);
-  color:#fff;
-}
-.del{
-  background:var(--danger);
-  color:#fff;
-}
-
-/* ================= MODAL ================= */
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.45);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:20;
-}
-.modal.active{
-  display:flex;
-}
-.modal-card{
-  background:#fff;
-  width:94%;
-  max-width:420px;
-  max-height:88vh;
-  border-radius:24px;
-  box-shadow:var(--shadow);
-  display:flex;
-  flex-direction:column;
-}
-.modal-body{
-  padding:16px;
-  overflow-y:auto;
-}
-.modal-footer{
-  padding:12px 16px;
-  border-top:1px solid var(--border);
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-/* ================= FORM ================= */
-label{
-  font-size:11px;
-  font-weight:800;
-  color:var(--muted);
-  display:block;
-  margin-bottom:4px;
-}
-input,select{
-  width:100%;
-  padding:12px;
-  border-radius:14px;
-  border:2px solid var(--border);
-  font-size:14px;
-  background:#fff;
-  margin-bottom:12px;
-}
-input:focus,select:focus{
-  border-color:var(--accent);
-  box-shadow:var(--focus);
-}
-
-/* ================= BUTTONS ================= */
-.btn{
-  padding:12px;
-  border:none;
-  border-radius:16px;
-  font-weight:900;
-  cursor:pointer;
-}
-.save{
-  background:linear-gradient(135deg,var(--primary),#22c55e);
-  color:#fff;
-}
-.cancel{
-  background:#e5e7eb;
-  color:#111;
-}
-
-/* ================= AUTOCOMPLETE ================= */
-.suggest{
-  background:#fff;
-  border:1px solid var(--border);
-  border-radius:12px;
-  margin-top:-8px;
-  margin-bottom:12px;
-  overflow:hidden;
-}
-.suggest div{
-  padding:8px 10px;
-  font-size:13px;
-  cursor:pointer;
-}
-.suggest div:hover{
-  background:#f1f5f9;
-}
-
-/* ================= PROGRESS BAR ================= */
-#progress-bar{
-  position:fixed;
-  top:0;
-  left:0;
-  height:4px;
-  width:0%;
-  background:linear-gradient(90deg,var(--primary),var(--accent));
-  z-index:9999;
-  transition:width .3s ease;
-}
-#progress-bar.active{
-  width:80%;
-}
-
-/* ================= BUTTON LOADER ================= */
-.loading{
-  pointer-events:none;
-  opacity:.85;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.loader-btn{
-  width:20px;
-  height:20px;
-  border:3px solid rgba(255,255,255,.4);
-  border-top-color:#fff;
-  border-radius:50%;
-  animation:spin .8s linear infinite;
-}
-
-/* ================= TORCH BUTTON ================= */
-#torchBtn{
-  margin-top:8px;
-  width:100%;
-  background:linear-gradient(135deg,#0f766e,#14b8a6);
-  color:#fff;
-  border:none;
-  padding:12px;
-  border-radius:14px;
-  font-weight:900;
-}
-#torchBtn.active{
-  background:linear-gradient(135deg,#169aa3,#22c55e);
-}
-
-/* ================= MODAL BUTTONS ================= */
-.modal-footer button{
-  border:none;
-  padding:14px;
-  border-radius:18px;
-  font-weight:900;
-  font-size:15px;
-  cursor:pointer;
-  transition:.15s ease;
-}
-
-/* GUARDAR */
-.modal-footer button:first-child{
-  background:linear-gradient(135deg,var(--primary),#22c55e);
-  color:#fff;
-  box-shadow:0 10px 24px rgba(22,163,74,.35);
-}
-.modal-footer button:first-child:hover{
-  transform:translateY(-1px);
-  box-shadow:0 14px 30px rgba(22,163,74,.45);
-}
-
-/* CANCELAR */
-.modal-footer button:last-child{
-  background:#e5e7eb;
-  color:#111;
-}
-.modal-footer button:last-child:hover{
-  background:#d1d5db;
-}
-
-/* ACTIVO */
-.modal-footer button:active{
-  transform:scale(.98);
-}
-
-/* ===== SCANNER / TORCH ===== */
-.btn.scan{
-  width:100%;
-  margin-top:8px;
-  background:linear-gradient(135deg,#0f766e,#14b8a6);
-  color:#fff;
-  border:none;
-  padding:12px;
-  border-radius:16px;
-  font-weight:900;
-}
-#torchBtn{
-  background:linear-gradient(135deg,#134e4a,#14b8a6);
-}
-#torchBtn.active{
-  background:linear-gradient(135deg,#16a34a,#22c55e);
-}
-
-/* ===== TARJETAS MÓVIL ===== */
-.cards{
-  display:none;
-  padding:14px;
-  gap:12px;
-}
-
-.card-item{
-  background:#fff;
-  border-radius:16px;
-  padding:14px;
-  box-shadow:0 8px 22px rgba(0,0,0,.08);
-  display:grid;
-  gap:6px;
-}
-
-.card-row{
-  display:flex;
-  justify-content:space-between;
-  font-size:13px;
-}
-
-.card-row b{color:#475569}
-
-.card-actions{
-  display:flex;
-  gap:10px;
-  margin-top:10px;
-}
-
-.card-actions button{
-  flex:1;
-  border:none;
-  padding:10px;
-  border-radius:12px;
-  font-weight:900;
-  color:#fff;
-}
-
-.card-actions .edit{background:#14b8a6}
-.card-actions .del{background:#ef4444}
-
-/* ===== MOBILE ===== */
-@media(max-width:768px){
-  table{display:none}
-  .cards{display:grid}
-}
-
-
-@keyframes spin{
-  to{transform:rotate(360deg)}
-}
-
-
-  /* ================= FIX DESBORDE ACCIONES ================= */
-
-/* evita que la tabla se estire hacia la derecha */
-table{
-  table-layout:fixed;
-  width:100%;
-}
-
-/* controla ancho de la columna de acciones */
-thead th:last-child,
-tbody td:last-child{
-  width:110px;
-  max-width:110px;
-  text-align:right;
-}
-
-/* contenedor de botones */
-.actions-td{
-  display:flex;
-  justify-content:flex-end;
-  align-items:center;
-  gap:6px;
-  max-width:110px;
-  overflow:hidden;
-}
-
-/* botones sin expansión */
-.actions-td button{
-  flex:0 0 auto;
-  white-space:nowrap;
-}
-
-/* seguridad extra */
-tbody td{
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-  /* ================= AUTO AJUSTE REAL DE TD ================= */
-
-/* la tabla puede crecer según el contenido */
-table{
-  width:max-content;
-  min-width:100%;
-  border-collapse:separate;
-}
-
-/* contenedor con scroll horizontal */
-.table-wrap,
-.card{
-  overflow-x:auto;
-}
-
-/* las celdas muestran TODO el contenido */
-tbody td,
-thead th{
-  white-space:normal;      /* 👈 permite crecer */
-  word-break:break-word;  /* 👈 corta solo si es extremo */
-}
-
-/* filas estables */
-tbody tr{
-  width:100%;
-}
-
-
-/* ================= MOBILE ================= */
-@media(max-width:480px){
-  header{font-size:16px}
-  tbody td{font-size:12px}
-}
-
-</style>
+<link rel="stylesheet" href="estilos.css">
 </head>
 
 <body>
@@ -470,405 +23,91 @@ tbody tr{
 </div>
 
 <div class="card">
-<table>
-<thead>
-<tr>
-<th>Código</th><th>Descripción</th><th>Ubicación</th><th>Cant.</th>
-<th>Registro</th><th>Entrada</th><th>Salida</th>
-<th>Resp.</th><th>Status</th><th>Origen</th><th></th>
-</tr>
-</thead>
-<tbody id="tabla"></tbody>
-</table>
-
-<!-- CONTENEDOR TARJETAS (SOLO MÓVIL) -->
-<div id="cards" class="cards"></div>
-
-</div>
-
-<!-- MODAL -->
-<div class="modal" id="modal">
-<div class="modal-card">
-<div class="modal-body">
-
-<input type="hidden" id="id">
-
-<label>Fecha Registro</label>
-<input id="fecha_registro" readonly>
-
-<label>Fecha Entrada</label>
-<input id="fecha_entrada" type="date">
-
-<label>Fecha Salida</label>
-<input id="fecha_salida" type="date">
-
-<label>Ubicación</label>
-<input id="ubicacion">
-
-<!-- CÓDIGO -->
-<div class="form-group">
-    <label>Código</label>
-  
-    <input
-      id="codigo"
-      type="text"
-      inputmode="text"
-      autocomplete="off"
-      placeholder="Ej: 00123 | AB123"
-      oninput="buscarCodigo()"
-    >
-  
-    <!-- BOTÓN SCANNER -->
-    <button
-      type="button"
-      class="btn scan"
-      onclick="abrirScanner()"
-    >
-      📷 Escanear
-    </button>
-  
-    <!-- CONTENEDOR CÁMARA -->
-    <div
-      id="scannerBox"
-      style="display:none;margin-top:25px;height:240px;border-radius:14px;overflow:hidden"
-    ></div>
-  
-    <!-- BOTÓN LINTERNA -->
-    <button
-      type="button"
-      id="torchBtn"
-      class="btn scan"
-      onclick="toggleTorch()"
-      style="display:none"
-    >
-      🔦 Linterna
-    </button>
-  
-    <!-- SUGERENCIAS -->
-    <div id="suggest" class="suggest" style="display:none"></div>
-  </div>
-  
-  
-<label>Descripción</label>
-<input id="descripcion" readonly>
-
-<label>Tipo de Movimiento</label>
-<div style="display:flex;gap:10px;margin-bottom:12px">
-  <button type="button" class="btn scan" id="btnEntrada" onclick="setMovimiento('ENTRADA')">➕ Entrada</button>
-  <button type="button" class="btn scan" id="btnSalida" onclick="setMovimiento('SALIDA')">➖ Salida</button>
-</div>
-
-<input type="hidden" id="tipo_movimiento">
-
-<label>Cantidad</label>
-<input id="cantidad" type="number" value="0">
-
-<label>Responsable</label>
-<input id="responsable">
-
-<label>Status</label>
-<select id="status">
-  <option value="VIGENTE">VIGENTE</option>
-  <option value="RETIRADO">RETIRADO</option>
-</select>
-
-<label>Origen</label>
-<input id="origen" readonly>
-
-</div>
-
-<div class="modal-footer">
-  <button onclick="guardar()">Guardar</button>
-  <button onclick="cerrarModal()">Cancelar</button>
-</div>
-</div>
-</div>
-<script>
-
-    /* =====================================================
-   CONFIGURACIÓN
-===================================================== */
-const URL_GS =
-  'https://script.google.com/macros/s/AKfycbwP-NHZUqboSXDPq8HcWEl1qseurNEym8D0jv__DgZG1N0xkEmAQOSrKmLvXrxRZACv1g/exec';
-
-let DATA = [];
-let ORIGEN = /android|iphone|ipad|mobile/i.test(navigator.userAgent)
-  ? 'MOBILE'
-  : 'WEB';
-
-/* =====================================================
-   UTILIDADES
-===================================================== */
-function normalizarCodigo(v){
-  return String(v ?? '').trim();
-}
-
-function formatFecha(f){
-  if(!f) return '';
-  const d = new Date(f);
-  if(isNaN(d)) return f;
-  return d.toLocaleString('es-CL',{
-    day:'2-digit',month:'short',year:'numeric',
-    hour:'2-digit',minute:'2-digit'
-  });
-}
-
-/* =====================================================
-   MODAL
-===================================================== */
-function abrirModal(){
-  limpiarFormulario();
-  document.getElementById('origen').value = ORIGEN;
-  document.getElementById('modal').classList.add('active');
-}
-
-function cerrarModal(){
-  cerrarScanner();
-  document.getElementById('modal').classList.remove('active');
-}
-
-/* =====================================================
-   AUTOCOMPLETE CÓDIGO
-===================================================== */
-let timerBuscar = null;
-
-function buscarCodigo(){
-  clearTimeout(timerBuscar);
-
-  const cod = normalizarCodigo(document.getElementById('codigo').value);
-  const desc = document.getElementById('descripcion');
-  const sug  = document.getElementById('suggest');
-
-  if(!cod){
-    desc.value = '';
-    sug.style.display = 'none';
-    return;
-  }
-
-  timerBuscar = setTimeout(()=>{
-    fetch(`${URL_GS}?accion=buscar&codigo=${encodeURIComponent(cod)}`)
-      .then(r=>r.json())
-      .then(d=>{
-        if(d.ok){
-          desc.value = d.descripcion;
-          sug.innerHTML = `
-            <div onclick="selectProducto('${d.codigo}','${d.descripcion}')">
-              ${d.codigo} – ${d.descripcion}
-            </div>`;
-          sug.style.display = 'block';
-        }else{
-          desc.value='';
-          sug.style.display='none';
-        }
-      })
-      .catch(()=>{
-        desc.value='';
-        sug.style.display='none';
-      });
-  },300);
-}
-
-function selectProducto(c,d){
-  document.getElementById('codigo').value = c;
-  document.getElementById('descripcion').value = d;
-  document.getElementById('suggest').style.display = 'none';
-}
-
-/* =====================================================
-   LISTADO
-===================================================== */
-function cargar(){
-  fetch(`${URL_GS}?accion=listar`)
-    .then(r=>r.json())
-    .then(d=>{
-      DATA = d.data || [];
-      renderTabla(DATA);
-    })
-    .catch(()=>renderTabla([]));
-}
-
-function renderTabla(arr){
-  const t = document.getElementById('tabla');
-  const c = document.getElementById('cards');
-
-  t.innerHTML = '';
-  c.innerHTML = '';
-
-  arr.forEach(r=>{
-    t.innerHTML += `
+  <table>
+    <thead>
       <tr>
-        <td>${r[5]}</td>
-        <td>${r[6]}</td>
-        <td>${r[4]}</td>
-        <td>${r[7]}</td>
-        <td>${formatFecha(r[1])}</td>
-        <td>${formatFecha(r[2])}</td>
-        <td>${formatFecha(r[3])}</td>
-        <td>${r[8]}</td>
-        <td>${r[9]}</td>
-        <td>${r[10]}</td>
-        <td class="actions-td">
-          <button class="edit" onclick='editar(${JSON.stringify(r)})'>✏️</button>
-          <button class="del" onclick='eliminar("${r[0]}")'>🗑️</button>
-        </td>
-      </tr>`;
+        <th>Código</th>
+        <th>Descripción</th>
+        <th>Ubicación</th>
+        <th>Cant.</th>
+        <th>Registro</th>
+        <th>Entrada</th>
+        <th>Salida</th>
+        <th>Resp.</th>
+        <th>Status</th>
+        <th>Origen</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
 
-    c.innerHTML += `
-      <div class="card-item">
-        <div class="card-row"><b>Código</b><span>${r[5]}</span></div>
-        <div class="card-row"><b>Descripción</b><span>${r[6]}</span></div>
-        <div class="card-row"><b>Ubicación</b><span>${r[4]}</span></div>
-        <div class="card-row"><b>Cantidad</b><span>${r[7]}</span></div>
-        <div class="card-actions">
-          <button class="edit" onclick='editar(${JSON.stringify(r)})'>Editar</button>
-          <button class="del" onclick='eliminar("${r[0]}")'>Eliminar</button>
-        </div>
-      </div>`;
-  });
-}
+  <!-- Móvil -->
+  <div id="cards" class="cards"></div>
+</div>
 
-/* =====================================================
-   EDITAR (CLAVE)
-===================================================== */
-let CANTIDAD_BASE = 0;
+<!-- ================= MODAL ================= -->
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <div class="modal-body">
 
-function editar(r){
+      <input type="hidden" id="id">
 
-  abrirModal();
+      <label>Fecha Entrada</label>
+      <input id="fecha_entrada" type="date">
 
-  CANTIDAD_BASE = Number(r[7]) || 0;
+      <label>Fecha Salida</label>
+      <input id="fecha_salida" type="date">
 
-  document.getElementById('id').value = r[0];
-  document.getElementById('fecha_entrada').value = r[2] ? r[2].slice(0,10) : '';
-  document.getElementById('fecha_salida').value  = r[3] ? r[3].slice(0,10) : '';
-  document.getElementById('ubicacion').value   = r[4];
-  document.getElementById('codigo').value      = r[5];
-  document.getElementById('descripcion').value = r[6];
-  document.getElementById('cantidad').value    = '';
-  document.getElementById('responsable').value = r[8];
-  document.getElementById('status').value      = r[9];
-  document.getElementById('origen').value      = r[10];
+      <label>Ubicación</label>
+      <input id="ubicacion">
 
-  document.getElementById('tipo_movimiento').value = '';
-  document.getElementById('btnEntrada').classList.remove('active');
-  document.getElementById('btnSalida').classList.remove('active');
-}
+      <label>Código</label>
+      <input id="codigo" autocomplete="off" oninput="buscarCodigo()">
 
-/* =====================================================
-   ENTRADA / SALIDA (FRONTEND)
-===================================================== */
-function setMovimiento(tipo){
-  document.getElementById('tipo_movimiento').value = tipo;
-  document.getElementById('btnEntrada').classList.toggle('active', tipo==='ENTRADA');
-  document.getElementById('btnSalida').classList.toggle('active', tipo==='SALIDA');
-}
+      <button class="btn scan" type="button" onclick="abrirScanner()">📷 Escanear</button>
 
-/* =====================================================
-   GUARDAR (CÁLCULO FINAL)
-===================================================== */
-function guardar(){
+      <div id="scannerBox"></div>
 
-  const tipo  = document.getElementById('tipo_movimiento').value;
-  const delta = Number(document.getElementById('cantidad').value || 0);
+      <button class="btn scan" id="torchBtn" type="button" onclick="toggleTorch()">🔦 Linterna</button>
 
-  if(!tipo) return alert('Seleccione ENTRADA o SALIDA');
-  if(delta<=0) return alert('Cantidad inválida');
+      <div id="suggest" class="suggest"></div>
 
-  let cantidadFinal = CANTIDAD_BASE;
-  if(tipo==='ENTRADA') cantidadFinal += delta;
-  if(tipo==='SALIDA')  cantidadFinal -= delta;
-  if(cantidadFinal<0)  return alert('Stock insuficiente');
+      <label>Descripción</label>
+      <input id="descripcion" readonly>
 
-  const payload = {
-    accion:'editar',
-    id:document.getElementById('id').value,
-    codigo:normalizarCodigo(document.getElementById('codigo').value),
-    cantidad:cantidadFinal,
-    responsable:document.getElementById('responsable').value,
-    status:document.getElementById('status').value,
-    origen:ORIGEN
-  };
+      <label>Tipo de Movimiento</label>
+      <div class="movimiento">
+        <button id="btnEntrada" class="btn scan" onclick="setMovimiento('ENTRADA')">➕ Entrada</button>
+        <button id="btnSalida" class="btn scan" onclick="setMovimiento('SALIDA')">➖ Salida</button>
+      </div>
 
-  fetch(URL_GS,{method:'POST',body:JSON.stringify(payload)})
-    .then(()=>{ cerrarModal(); cargar(); })
-    .catch(()=>alert('Error al guardar'));
-}
+      <input type="hidden" id="tipo_movimiento">
 
-/* =====================================================
-   ELIMINAR
-===================================================== */
-function eliminar(id){
-  if(!confirm('¿Eliminar este movimiento?')) return;
-  fetch(URL_GS,{
-    method:'POST',
-    body:JSON.stringify({accion:'eliminar',id})
-  }).then(cargar);
-}
+      <label>Cantidad</label>
+      <input id="cantidad" type="number" min="1">
 
-/* =====================================================
-   FILTRO
-===================================================== */
-function filtrar(txt){
-  txt = txt.toLowerCase();
-  renderTabla(DATA.filter(r=>r.join(' ').toLowerCase().includes(txt)));
-}
+      <label>Responsable</label>
+      <input id="responsable">
 
-/* =====================================================
-   LIMPIAR
-===================================================== */
-function limpiarFormulario(){
-  document.querySelectorAll('#modal input, #modal select')
-    .forEach(i=>i.value='');
-  const s = document.getElementById('suggest');
-  if(s) s.style.display='none';
-}
+      <label>Status</label>
+      <select id="status">
+        <option value="VIGENTE">VIGENTE</option>
+        <option value="RETIRADO">RETIRADO</option>
+      </select>
 
-/* =====================================================
-   SCANNER + LINTERNA
-===================================================== */
-let scanner=null, torchOn=false;
+      <label>Origen</label>
+      <input id="origen" readonly>
 
-function abrirScanner(){
-  if(!/android|iphone|ipad|mobile/i.test(navigator.userAgent))
-    return alert('Scanner solo en móvil');
+    </div>
 
-  document.getElementById('scannerBox').style.display='block';
-  document.getElementById('torchBtn').style.display='block';
+    <div class="modal-footer">
+      <button onclick="guardar()">Guardar</button>
+      <button onclick="cerrarModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
 
-  scanner = new Html5Qrcode('scannerBox');
-  scanner.start(
-    {facingMode:{exact:'environment'}},
-    {fps:10,qrbox:220},
-    txt=>{
-      document.getElementById('codigo').value = txt.trim();
-      cerrarScanner();
-      buscarCodigo();
-    }
-  );
-}
-
-function toggleTorch(){
-  if(!scanner) return;
-  torchOn=!torchOn;
-  scanner.applyVideoConstraints({advanced:[{torch:torchOn}]});
-  document.getElementById('torchBtn').classList.toggle('active',torchOn);
-}
-
-function cerrarScanner(){
-  if(scanner){
-    scanner.stop().then(()=>scanner.clear()).catch(()=>{});
-    scanner=null;
-  }
-  document.getElementById('scannerBox').style.display='none';
-  document.getElementById('torchBtn').style.display='none';
-  torchOn=false;
-}
-
-/* =====================================================
-   INIT
-===================================================== */
-document.addEventListener('DOMContentLoaded', cargar);
-</script>
-<script src="segurity.js"></script>
+<script src="ubicaciones.js"></script>
 </body>
 </html>
