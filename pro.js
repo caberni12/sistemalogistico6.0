@@ -688,6 +688,52 @@ window.addEventListener("beforeunload", e => {
 
 })();
 
+/* =====================================================
+   BOTÓN TECLADO EN CÁMARA (FLUJO PRO)
+   ===================================================== */
+
+// guarda referencia al último input usado
+let ultimoInputScanner = null;
+
+// envuelve tu activarScan SIN romperlo
+const activarScanOriginal = window.activarScan;
+
+window.activarScan = function(tipo){
+  ultimoInputScanner = tipo;
+  activarScanOriginal(tipo);
+
+  // agrega botón teclado cuando el scanner esté listo
+  setTimeout(agregarBotonTeclado, 300);
+};
+
+function agregarBotonTeclado(){
+  const overlay = document.querySelector(".scanner-overlay");
+  if (!overlay) return;
+
+  // evita duplicados
+  if (overlay.querySelector(".scanner-btn.keyboard")) return;
+
+  const btn = document.createElement("button");
+  btn.className = "scanner-btn keyboard";
+  btn.innerText = "⌨️";
+
+  btn.onclick = () => {
+    // cerrar scanner
+    cerrarScanner?.();
+
+    // activar teclado en el input correcto
+    const input = document.getElementById(ultimoInputScanner);
+    if (input) {
+      setTimeout(() => {
+        input.focus();
+      }, 120);
+    }
+  };
+
+  overlay.appendChild(btn);
+};
+
+
 
 
 
