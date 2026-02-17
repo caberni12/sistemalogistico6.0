@@ -632,10 +632,10 @@ window.addEventListener("beforeunload", e => {
 
 
 /* =====================================================
-   INPUT ↔ SCANNER – SCRIPT ÚNICO DEFINITIVO
-   - 1 tap  → teclado
-   - 2 tap  → scanner
-   - Botón ⌨️ dentro del overlay (toggle)
+   INPUT ↔ SCANNER – DEFINITIVO Y CORRECTO
+   1 TAP  = TECLADO
+   2 TAP  = SCANNER
+   BOTÓN ⌨️ = TOGGLE
    ===================================================== */
 
 (function(){
@@ -647,16 +647,16 @@ window.addEventListener("beforeunload", e => {
 
   /* ================= HELPERS ================= */
 
-  function bloquearInput(input){
-    input.setAttribute("readonly","true");
-    input.blur();
-    tecladoActivo = false;
-  }
-
-  function habilitarInput(input){
+  function abrirTeclado(input){
     input.removeAttribute("readonly");
     input.focus();
     tecladoActivo = true;
+  }
+
+  function cerrarTeclado(input){
+    input.setAttribute("readonly","true");
+    input.blur();
+    tecladoActivo = false;
   }
 
   /* ================= TAP HANDLER ================= */
@@ -667,24 +667,26 @@ window.addEventListener("beforeunload", e => {
     const diff = now - lastTapTime;
     lastTapTime = now;
 
-    // === DOBLE TAP → SCANNER ===
+    // ===== DOBLE TAP → SCANNER =====
     if (diff < DOUBLE_TAP_DELAY){
       e.preventDefault();
-      bloquearInput(input);
+      cerrarTeclado(input);
       activarScan(input.id);
       return;
     }
 
-    // === TAP SIMPLE → TECLADO ===
+    // ===== TAP SIMPLE → TECLADO =====
     cerrarScanner?.();
-    setTimeout(() => habilitarInput(input), 80);
+    abrirTeclado(input);
   }
 
   function prepararInput(id){
     const input = document.getElementById(id);
     if (!input) return;
 
-    bloquearInput(input);
+    // teclado DISPONIBLE por defecto
+    input.removeAttribute("readonly");
+
     input.addEventListener("touchend", manejarTap);
     input.addEventListener("click", manejarTap);
   }
@@ -696,12 +698,12 @@ window.addEventListener("beforeunload", e => {
   window.activarScan = function(tipo){
     ultimoInput = tipo;
     activarScanBase(tipo);
-    esperarOverlay();
+    agregarBotonTeclado();
   };
 
-  /* ================= BOTÓN ⌨️ OVERLAY ================= */
+  /* ================= BOTÓN ⌨️ ================= */
 
-  function esperarOverlay(){
+  function agregarBotonTeclado(){
 
     const box = document.getElementById("scannerBox");
     if (!box) return;
@@ -726,9 +728,9 @@ window.addEventListener("beforeunload", e => {
 
         if (!tecladoActivo){
           cerrarScanner?.();
-          setTimeout(() => habilitarInput(input), 120);
+          setTimeout(() => abrirTeclado(input), 120);
         } else {
-          bloquearInput(input);
+          cerrarTeclado(input);
           setTimeout(() => activarScan(ultimoInput), 120);
         }
       };
