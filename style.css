@@ -467,7 +467,7 @@
   #scannerBox{
     width:100%;
     max-width:420px;
-    height:38dvh;          /* CLAVE ABSOLUTA */
+    height:50dvh;          /* CLAVE ABSOLUTA */
     max-height:380px;
     border-radius:22px;
     background:#000;
