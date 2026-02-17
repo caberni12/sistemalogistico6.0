@@ -389,6 +389,26 @@ tbody tr:hover{
   }
 }
 
+/* ===== CONTENEDOR FOTOS (ANTI OCULTO) ===== */
+.foto-wrap{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  min-height:50px;
+  align-items:center;
+}
+
+td .foto-wrap{
+  justify-content:center;
+}
+
+.row-card .foto-wrap{
+  justify-content:flex-start;
+}
+
+.foto-wrap img{
+  display:block;
+}
 
  
 
@@ -735,24 +755,31 @@ render();
  /* ======================================================
      FOTOS
   ====================================================== */
- function renderFotos(f){
+function renderFotos(f){
   if(!f) return "";
 
-  return String(f)
+  const fotos = String(f)
     .split("|")
     .map(u => u.trim())
-    .filter(u => u && u.startsWith("http"))
-    .map(u => `
-      <img
-        src="${u}"
-        class="foto-thumb"
-        loading="lazy"
-        onclick="openFoto('${u}')"
-        onerror="this.style.display='none'"
-      >
-    `)
-    .join("");
+    .filter(u => u && u.startsWith("http"));
+
+  if(!fotos.length) return "";
+
+  return `
+    <div class="foto-wrap">
+      ${fotos.map(u => `
+        <img
+          src="${u}"
+          class="foto-thumb"
+          loading="lazy"
+          onclick="openFoto('${u}')"
+          onerror="this.style.display='none'"
+        >
+      `).join("")}
+    </div>
+  `;
 }
+
 
 
   
