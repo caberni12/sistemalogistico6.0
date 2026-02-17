@@ -632,10 +632,7 @@ window.addEventListener("beforeunload", e => {
 
 
 /* =====================================================
-   INPUT ↔ SCANNER – DEFINITIVO Y CORRECTO
-   1 TAP  = TECLADO
-   2 TAP  = SCANNER
-   BOTÓN ⌨️ = TOGGLE
+   INPUT ↔ SCANNER – DEFINITIVO REAL (SIN BUG MÓVIL)
    ===================================================== */
 
 (function(){
@@ -644,6 +641,7 @@ window.addEventListener("beforeunload", e => {
   let lastTapTime = 0;
   let ultimoInput = null;
   let tecladoActivo = false;
+  let touchActivo = false;
 
   /* ================= HELPERS ================= */
 
@@ -662,6 +660,10 @@ window.addEventListener("beforeunload", e => {
   /* ================= TAP HANDLER ================= */
 
   function manejarTap(e){
+
+    // evita click fantasma después del touch
+    if (e.type === "click" && touchActivo) return;
+
     const input = e.currentTarget;
     const now = Date.now();
     const diff = now - lastTapTime;
@@ -684,10 +686,14 @@ window.addEventListener("beforeunload", e => {
     const input = document.getElementById(id);
     if (!input) return;
 
-    // teclado DISPONIBLE por defecto
     input.removeAttribute("readonly");
 
-    input.addEventListener("touchend", manejarTap);
+    input.addEventListener("touchend", e=>{
+      touchActivo = true;
+      manejarTap(e);
+      setTimeout(()=> touchActivo = false, 400);
+    });
+
     input.addEventListener("click", manejarTap);
   }
 
@@ -728,10 +734,10 @@ window.addEventListener("beforeunload", e => {
 
         if (!tecladoActivo){
           cerrarScanner?.();
-          setTimeout(() => abrirTeclado(input), 120);
+          setTimeout(()=> abrirTeclado(input),120);
         } else {
           cerrarTeclado(input);
-          setTimeout(() => activarScan(ultimoInput), 120);
+          setTimeout(()=> activarScan(ultimoInput),120);
         }
       };
 
@@ -739,7 +745,7 @@ window.addEventListener("beforeunload", e => {
       observer.disconnect();
     });
 
-    observer.observe(box, { childList:true, subtree:true });
+    observer.observe(box,{childList:true,subtree:true});
   }
 
   /* ================= INIT ================= */
@@ -747,6 +753,7 @@ window.addEventListener("beforeunload", e => {
   ["codigo","ubicacion"].forEach(prepararInput);
 
 })();
+
 
 
 
