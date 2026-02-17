@@ -796,20 +796,35 @@ function renderFotos(f){
 
   
   function openFoto(url){
-    currentFoto = url;
-    fotoGrande.src = url;
-    fotoModal.style.display = "flex";
-  }
-  
-  btnCerrarFoto.onclick = ()=> fotoModal.style.display="none";
-  
-  btnDescargarFoto.onclick = ()=>{
-    const a = document.createElement("a");
-    a.href = currentFoto;
-    a.download = "foto_pedido.jpg";
-    a.click();
-  };
-  
+  currentFoto = url;
+
+  // usar versión GRANDE solo en el modal
+  const full = url.replace(/=s\d+$/, '=s1600');
+
+  // limpiar antes de cargar (evita parpadeos)
+  fotoGrande.src = "";
+  fotoModal.style.display = "flex";
+
+  // cargar imagen grande
+  fotoGrande.src = full;
+}
+
+// cerrar modal
+btnCerrarFoto.onclick = ()=>{
+  fotoModal.style.display = "none";
+  fotoGrande.src = ""; // libera memoria
+};
+
+// descargar imagen original
+btnDescargarFoto.onclick = ()=>{
+  const a = document.createElement("a");
+  a.href = currentFoto.replace(/=s\d+$/, '=s2000');
+  a.download = "foto_pedido.jpg";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
+
   /* ======================================================
      MAPA
   ====================================================== */
