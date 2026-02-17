@@ -552,8 +552,16 @@ tbody tr{
 <label>Descripción</label>
 <input id="descripcion" readonly>
 
+<label>Tipo de Movimiento</label>
+<div style="display:flex;gap:10px;margin-bottom:12px">
+  <button type="button" class="btn scan" id="btnEntrada" onclick="setMovimiento('ENTRADA')">➕ Entrada</button>
+  <button type="button" class="btn scan" id="btnSalida" onclick="setMovimiento('SALIDA')">➖ Salida</button>
+</div>
+
+<input type="hidden" id="tipo_movimiento">
+
 <label>Cantidad</label>
-<input id="cantidad" type="number" value="1">
+<input id="cantidad" type="number" value="0">
 
 <label>Responsable</label>
 <input id="responsable">
@@ -725,53 +733,16 @@ function selectProducto(cod, desc) {
 /* =====================================================
    GUARDAR (AGREGAR / EDITAR)
 ===================================================== */
-function guardar() {
-  const btn = document.getElementById('btnGuardar');
 
-  const payload = {
-    accion: document.getElementById('id').value
-      ? 'editar'
-      : 'agregar',
-    id: document.getElementById('id').value,
-    fecha_entrada: document.getElementById('fecha_entrada').value,
-    fecha_salida: document.getElementById('fecha_salida').value,
-    ubicacion: document.getElementById('ubicacion').value,
-    codigo: normalizarCodigo(
-      document.getElementById('codigo').value
-    ),
-    descripcion: document.getElementById('descripcion').value,
-    cantidad: Number(
-      document.getElementById('cantidad').value || 0
-    ),
-    responsable: document.getElementById('responsable').value,
-    status: document.getElementById('status').value,
-    origen: ORIGEN,
-  };
+let CANTIDAD_BASE = 0;
 
-  if (!payload.status) {
-    alert('Debe seleccionar STATUS');
-    return;
-  }
-
-  startBtnLoader(btn);
-  startProgress();
-
-  fetch(URL_GS, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
-    .then(() => {
-      endBtnLoader(btn);
-      endProgress();
-      cerrarModal();
-      cargar();
-    })
-    .catch(() => {
-      endBtnLoader(btn);
-      endProgress();
-      alert('Error al guardar');
-    });
+function setMovimiento(tipo){
+  document.getElementById('tipo_movimiento').value = tipo;
+  document.getElementById('btnEntrada').classList.toggle('active', tipo === 'ENTRADA');
+  document.getElementById('btnSalida').classList.toggle('active', tipo === 'SALIDA');
 }
+
+
 
 /* =====================================================
    LISTAR / TABLA
@@ -822,6 +793,54 @@ function renderTabla(arr) {
       </tr>
     `;
 
+function guardar(){
+
+  const tipo = document.getElementById('tipo_movimiento').value;
+  const delta = Number(document.getElementById('cantidad').value || 0);
+
+  if(!tipo){
+    alert('Seleccione ENTRADA o SALIDA');
+    return;
+  }
+
+  if(delta <= 0){
+    alert('Cantidad inválida');
+    return;
+  }
+
+  let cantidadFinal = CANTIDAD_BASE;
+
+  if(tipo === 'ENTRADA') cantidadFinal += delta;
+  if(tipo === 'SALIDA')  cantidadFinal -= delta;
+
+  if(cantidadFinal < 0){
+    alert('Stock insuficiente');
+    return;
+  }
+
+  const payload = {
+    accion: 'editar',
+    id: document.getElementById('id').value,
+    codigo: normalizarCodigo(document.getElementById('codigo').value),
+    cantidad: cantidadFinal,
+    responsable: document.getElementById('responsable').value,
+    status: document.getElementById('status').value,
+    origen: ORIGEN
+  };
+
+  fetch(URL_GS,{
+    method:'POST',
+    body:JSON.stringify(payload)
+  })
+  .then(()=>{
+    cerrarModal();
+    cargar();
+  })
+  .catch(()=>{
+    alert('Error al guardar');
+  });
+}
+
     /* ===== TARJETA (MÓVIL) ===== */
     cards.innerHTML += `
       <div class="card-item">
@@ -849,24 +868,40 @@ function renderTabla(arr) {
 /* =====================================================
    EDITAR / ELIMINAR
 ===================================================== */
-function editar(r) {
+
+function editar(r){
+
   abrirModal();
 
+  // 🔒 stock actual (base para cálculo)
+  CANTIDAD_BASE = Number(r[7]) || 0;
+
+  // id del registro
   document.getElementById('id').value = r[0];
-  document.getElementById('fecha_entrada').value = r[2]
-    ? r[2].slice(0, 10)
-    : '';
-  document.getElementById('fecha_salida').value = r[3]
-    ? r[3].slice(0, 10)
-    : '';
-  document.getElementById('ubicacion').value = r[4];
-  document.getElementById('codigo').value = r[5];
+
+  // fechas
+  document.getElementById('fecha_entrada').value = r[2] ? r[2].slice(0,10) : '';
+  document.getElementById('fecha_salida').value  = r[3] ? r[3].slice(0,10) : '';
+
+  // datos
+  document.getElementById('ubicacion').value   = r[4];
+  document.getElementById('codigo').value      = r[5];
   document.getElementById('descripcion').value = r[6];
-  document.getElementById('cantidad').value = r[7];
+
+  // ⚠️ input cantidad queda VACÍO (se ingresa solo el movimiento)
+  document.getElementById('cantidad').value = '';
+
   document.getElementById('responsable').value = r[8];
-  document.getElementById('status').value = r[9];
-  document.getElementById('origen').value = r[10];
+  document.getElementById('status').value      = r[9];
+  document.getElementById('origen').value      = r[10];
+
+  // reset tipo movimiento
+  document.getElementById('tipo_movimiento').value = '';
+  document.getElementById('btnEntrada').classList.remove('active');
+  document.getElementById('btnSalida').classList.remove('active');
 }
+
+
 
 function eliminar(id) {
   if (!confirm('¿Eliminar este movimiento?')) return;
