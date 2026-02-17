@@ -774,18 +774,23 @@ function renderFotos(f){
 
   return `
     <div class="foto-wrap">
-      ${fotos.map(u => `
-        <img
-          src="${u}"
-          class="foto-thumb"
-          loading="lazy"
-          referrerpolicy="no-referrer"
-          onclick="openFoto('${u}')"
-        >
-      `).join("")}
+      ${fotos.map(u => {
+        const thumb = u.replace(/=s\d+$/, '=s120');   // 👈 miniatura
+        return `
+          <img
+            src="${thumb}"
+            data-full="${u}"
+            class="foto-thumb"
+            loading="lazy"
+            decoding="async"
+            onclick="openFoto(this.dataset.full)"
+          >
+        `;
+      }).join("")}
     </div>
   `;
 }
+
 
 
 
