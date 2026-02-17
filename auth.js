@@ -1,16 +1,11 @@
 /* =====================================================
-   AUTH.JS — CONTROL TOTAL DE SESIÓN (FINAL)
-   Compatible con Google Apps Script
+   AUTH.JS — CONTROL DE SESIÓN (FINAL)
+   Compatible con token renovado y re-firmado
 ===================================================== */
-
-if (location.pathname.endsWith("index.html")) {
-  console.warn("auth.js bloqueado en login");
-  throw new Error("auth.js no debe ejecutarse en index.html");
-}
 
 /* ========= CONFIG ========= */
 const API_AUTH =
-  "https://script.google.com/macros/s/AKfycbwfykkQ5Ah7vtRddxTJV-KIJEqcdD3Swx7MXhSRnOfuc9NXYz_tiSBMSNVaFZKuAuRT/exec";
+  "https://script.google.com/macros/s/AKfycbzMad3A7vIO3nn-BXaNysrOcoFQtsWEdYe4kdALM52IY0nKoVaZ5zClEpqOk74ewW2b/exec";
 
 const LOGIN_PAGE = "index.html";
 
@@ -19,8 +14,8 @@ let AUTH_USER = null;
 
 /* =====================================================
    VALIDAR SESIÓN GLOBAL
-   - Se ejecuta SOLO en páginas internas
-   - Una sola validación
+   - Ejecutar SOLO en páginas internas
+   - Renueva token automáticamente
 ===================================================== */
 async function validarSesionGlobal(){
 
@@ -28,14 +23,13 @@ async function validarSesionGlobal(){
   if (location.pathname.endsWith(LOGIN_PAGE)) return null;
 
   const token = localStorage.getItem("token");
-  if (!token) {
+  if (!token){
     redirigirLogin();
     return null;
   }
 
   try{
-    // 🔒 VERIFY (GET, como lo requiere tu GAS)
-    const r = await fetch(`${API_AUTH}?action=verify&token=${token}`);
+    const r = await fetch(`${API_AUTH}?action=verify&token=${encodeURIComponent(token)}`);
     const res = await r.json();
 
     if(!res.valid){
@@ -44,9 +38,14 @@ async function validarSesionGlobal(){
       return null;
     }
 
+    // 🔄 GUARDAR TOKEN RENOVADO (CLAVE)
+    if(res.token){
+      localStorage.setItem("token", res.token);
+    }
+
     AUTH_USER = res.data || {};
 
-    // 🛡️ Asegurar permisos como array
+    // 🛡️ asegurar permisos como array
     if(typeof AUTH_USER.permisos === "string"){
       try{
         AUTH_USER.permisos = JSON.parse(AUTH_USER.permisos);
@@ -54,7 +53,6 @@ async function validarSesionGlobal(){
         AUTH_USER.permisos = [];
       }
     }
-
     if(!Array.isArray(AUTH_USER.permisos)){
       AUTH_USER.permisos = [];
     }
@@ -63,6 +61,7 @@ async function validarSesionGlobal(){
 
   }catch(err){
     console.error("AUTH ERROR:", err);
+    limpiarSesion();
     redirigirLogin();
     return null;
   }
@@ -77,7 +76,6 @@ function limpiarSesion(){
   localStorage.removeItem("nombre");
   localStorage.removeItem("rol");
   localStorage.removeItem("permisos");
-  localStorage.removeItem("login_ok");
 }
 
 function redirigirLogin(){
@@ -95,9 +93,8 @@ function cerrarSesionGlobal(){
 }
 
 /* =====================================================
-   ACCESO RÁPIDO AL USUARIO (OPCIONAL)
+   ACCESO AL USUARIO ACTUAL (OPCIONAL)
 ===================================================== */
 function getUsuarioActual(){
   return AUTH_USER;
 }
-
