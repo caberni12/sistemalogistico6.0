@@ -631,85 +631,98 @@ window.addEventListener("beforeunload", e => {
 });
 
 
+
 /* =====================================================
-   INPUT ↔ SCANNER – DEFINITIVO REAL (SIN BUG MÓVIL)
+   FLUJO PRO INPUT ↔ SCANNER
+   1 TAP = TECLADO
+   2 TAP = SCANNER
    ===================================================== */
 
 (function(){
 
-  const DOUBLE_TAP_DELAY = 350;
-  let lastTapTime = 0;
-  let ultimoInput = null;
-  let tecladoActivo = false;
-  let touchActivo = false;
+  const DOUBLE_TAP_DELAY = 350; // ms
+  let lastTap = 0;
 
-  /* ================= HELPERS ================= */
-
-  function abrirTeclado(input){
-    input.removeAttribute("readonly");
-    input.focus();
-    tecladoActivo = true;
-  }
-
-  function cerrarTeclado(input){
-    input.setAttribute("readonly","true");
-    input.blur();
-    tecladoActivo = false;
-  }
-
-  /* ================= TAP HANDLER ================= */
-
-  function manejarTap(e){
-
-    // evita click fantasma después del touch
-    if (e.type === "click" && touchActivo) return;
-
+  function manejarTapInput(e){
     const input = e.currentTarget;
     const now = Date.now();
-    const diff = now - lastTapTime;
-    lastTapTime = now;
+    const diff = now - lastTap;
+    lastTap = now;
 
-    // ===== DOBLE TAP → SCANNER =====
-    if (diff < DOUBLE_TAP_DELAY){
+    // === DOBLE TAP → SCANNER ===
+    if (diff < DOUBLE_TAP_DELAY) {
       e.preventDefault();
-      cerrarTeclado(input);
-      activarScan(input.id);
+
+      // cerrar teclado
+      input.blur();
+
+      // activar scanner según input
+      if (input.id === "codigo") {
+        activarScan("codigo");
+      }
+
+      if (input.id === "ubicacion") {
+        activarScan("ubicacion");
+      }
+
       return;
     }
 
-    // ===== TAP SIMPLE → TECLADO =====
-    cerrarScanner?.();
-    abrirTeclado(input);
+    // === TAP SIMPLE → TECLADO ===
+    cerrarScanner?.(); // cierra scanner si está activo
+    input.removeAttribute("readonly");
+    input.focus();
   }
 
   function prepararInput(id){
     const input = document.getElementById(id);
     if (!input) return;
 
+    // editable por defecto
     input.removeAttribute("readonly");
 
-    input.addEventListener("touchend", e=>{
-      touchActivo = true;
-      manejarTap(e);
-      setTimeout(()=> touchActivo = false, 400);
-    });
-
-    input.addEventListener("click", manejarTap);
+    input.addEventListener("touchend", manejarTapInput);
+    input.addEventListener("click", manejarTapInput);
   }
 
-  /* ================= WRAP activarScan ================= */
+  // aplica SOLO a los inputs que usan scanner
+  ["codigo", "ubicacion"].forEach(prepararInput);
 
+})();
+
+/* =====================================================
+   BOTÓN ⌨️ TOGGLE TECLADO ⇄ SCANNER (FINAL)
+   ===================================================== */
+
+(function(){
+
+  let ultimoInputScanner = null;
+  let tecladoActivo = false;
+
+  /* ===== helpers ===== */
+  function bloquearInput(input){
+    input.setAttribute("readonly", "true");
+    input.blur();
+    tecladoActivo = false;
+  }
+
+  function habilitarInput(input){
+    input.removeAttribute("readonly");
+    input.focus();
+    tecladoActivo = true;
+  }
+
+  /* ===== envolver activarScan ===== */
   const activarScanBase = window.activarScan;
 
   window.activarScan = function(tipo){
-    ultimoInput = tipo;
+    ultimoInputScanner = tipo;
     activarScanBase(tipo);
-    agregarBotonTeclado();
+    observarOverlayScanner();
   };
 
-  /* ================= BOTÓN ⌨️ ================= */
-
-  function agregarBotonTeclado(){
+  /* ===== observar overlay del scanner ===== */
+  function observarOverlayScanner(){
 
     const box = document.getElementById("scannerBox");
     if (!box) return;
@@ -719,25 +732,26 @@ window.addEventListener("beforeunload", e => {
       const overlay = box.querySelector(".scanner-overlay");
       if (!overlay) return;
 
-      if (overlay.querySelector(".scanner-btn.keyboard")){
-        observer.disconnect();
-        return;
-      }
+      if (overlay.querySelector(".scanner-btn.keyboard")) return;
 
       const btn = document.createElement("button");
       btn.className = "scanner-btn keyboard";
-      btn.textContent = "⌨️";
+      btn.innerText = "⌨️";
 
       btn.onclick = () => {
-        const input = document.getElementById(ultimoInput);
+
+        const input = document.getElementById(ultimoInputScanner);
         if (!input) return;
 
-        if (!tecladoActivo){
+        // ===== TOGGLE =====
+        if (!tecladoActivo) {
+          // abrir teclado
           cerrarScanner?.();
-          setTimeout(()=> abrirTeclado(input),120);
+          setTimeout(() => habilitarInput(input), 120);
         } else {
-          cerrarTeclado(input);
-          setTimeout(()=> activarScan(ultimoInput),120);
+          // cerrar teclado y volver a scanner
+          bloquearInput(input);
+          setTimeout(() => activarScan(ultimoInputScanner), 120);
         }
       };
 
@@ -745,12 +759,77 @@ window.addEventListener("beforeunload", e => {
       observer.disconnect();
     });
 
-    observer.observe(box,{childList:true,subtree:true});
+    observer.observe(box, { childList:true, subtree:true });
   }
 
-  /* ================= INIT ================= */
+  /* ===== bloquear inputs por defecto ===== */
+  ["codigo","ubicacion"].forEach(id=>{
+    const input = document.getElementById(id);
+    if (input) bloquearInput(input);
+  });
 
-  ["codigo","ubicacion"].forEach(prepararInput);
+})();
+
+
+/* =====================================================
+   BOTÓN ⌨️ TECLADO – FIX DEFINITIVO (INFALIBLE)
+   ===================================================== */
+
+(function(){
+
+  let ultimoInput = null;
+
+  // envolvemos activarScan SIN romperlo
+  const activarScanOriginal = window.activarScan;
+
+  window.activarScan = function(tipo){
+    ultimoInput = tipo;
+    activarScanOriginal(tipo);
+    esperarOverlayYAgregarBoton();
+  };
+
+  function esperarOverlayYAgregarBoton(){
+
+    const box = document.getElementById("scannerBox");
+    if (!box) return;
+
+    // Observa SOLO este scannerBox
+    const observer = new MutationObserver(() => {
+
+      const overlay = box.querySelector(".scanner-overlay");
+      if (!overlay) return;
+
+      // si ya existe, no duplica
+      if (overlay.querySelector(".scanner-btn.keyboard")) {
+        observer.disconnect();
+        return;
+      }
+
+      // CREA BOTÓN ⌨️
+      const btn = document.createElement("button");
+      btn.className = "scanner-btn keyboard";
+      btn.textContent = "⌨️";
+
+      btn.onclick = () => {
+        cerrarScanner?.();
+        const input = document.getElementById(ultimoInput);
+        if (input) {
+          setTimeout(() => {
+            input.removeAttribute("readonly");
+            input.focus();
+          }, 150);
+        }
+      };
+
+      overlay.appendChild(btn);
+      observer.disconnect(); // YA ESTÁ
+    });
+
+    observer.observe(box, {
+      childList: true,
+      subtree: true
+    });
+  }
 
 })();
 
