@@ -12,6 +12,7 @@
     color:#0f172a;
   }
   
+
   /* =====================================================
      CONTENEDOR
      ===================================================== */
@@ -431,4 +432,55 @@
       display:none!important;
     }
   }
-  
+  /* =====================================================
+   LAYOUT CORRECTO – SCANNER ARRIBA / TECLADO ABAJO
+   ===================================================== */
+@media (max-width: 767px){
+
+  html, body{
+    height:100%;
+    overflow:hidden; /* CLAVE */
+  }
+
+  /* contenedor principal */
+  .wrap{
+    height:100%;
+    padding:0;
+  }
+
+  .card{
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    padding:12px;
+  }
+
+  /* ================= SCANNER ================= */
+  .scanner-slot{
+    flex:0 0 auto;
+    margin:0;
+    padding-bottom:8px;
+    display:flex;
+    justify-content:center;
+  }
+
+  #scannerBox{
+    width:100%;
+    max-width:420px;
+    height:38dvh;          /* CLAVE ABSOLUTA */
+    max-height:380px;
+    border-radius:22px;
+    background:#000;
+    overflow:hidden;
+  }
+
+  /* ================= FORM ================= */
+  #captura,
+  .tab.active{
+    flex:1;
+    overflow-y:auto;      /* SOLO AQUÍ SCROLL */
+    padding-bottom:20px;
+    -webkit-overflow-scrolling:touch;
+  }
+
+}
