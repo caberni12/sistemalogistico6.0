@@ -21,8 +21,11 @@ function formatFecha(f){
   const d = new Date(f);
   if(isNaN(d)) return f;
   return d.toLocaleString('es-CL',{
-    day:'2-digit',month:'short',year:'numeric',
-    hour:'2-digit',minute:'2-digit'
+    day:'2-digit',
+    month:'short',
+    year:'numeric',
+    hour:'2-digit',
+    minute:'2-digit'
   });
 }
 
@@ -88,7 +91,7 @@ function selectProducto(c,d){
 }
 
 /* =====================================================
-   LISTADO
+   LISTAR
 ===================================================== */
 function cargar(){
   fetch(`${URL_GS}?accion=listar`)
@@ -102,10 +105,7 @@ function cargar(){
 
 function renderTabla(arr){
   const t = document.getElementById('tabla');
-  const c = document.getElementById('cards');
-
   t.innerHTML = '';
-  c.innerHTML = '';
 
   arr.forEach(r=>{
     t.innerHTML += `
@@ -125,27 +125,16 @@ function renderTabla(arr){
           <button class="del" onclick='eliminar("${r[0]}")'>🗑️</button>
         </td>
       </tr>`;
-
-    c.innerHTML += `
-      <div class="card-item">
-        <div><b>Código:</b> ${r[5]}</div>
-        <div><b>Descripción:</b> ${r[6]}</div>
-        <div><b>Ubicación:</b> ${r[4]}</div>
-        <div><b>Cantidad:</b> ${r[7]}</div>
-        <div class="card-actions">
-          <button class="edit" onclick='editar(${JSON.stringify(r)})'>Editar</button>
-          <button class="del" onclick='eliminar("${r[0]}")'>Eliminar</button>
-        </div>
-      </div>`;
   });
 }
 
 /* =====================================================
-   EDITAR / STOCK BASE
+   EDITAR (STOCK REAL)
 ===================================================== */
 let CANTIDAD_BASE = 0;
 
 function editar(r){
+
   abrirModal();
 
   CANTIDAD_BASE = Number(r[7]) || 0;
@@ -156,23 +145,40 @@ function editar(r){
   document.getElementById('ubicacion').value   = r[4];
   document.getElementById('codigo').value      = r[5];
   document.getElementById('descripcion').value = r[6];
-  document.getElementById('cantidad').value    = '';
+
+  // stock real
+  document.getElementById('cantidad').value = CANTIDAD_BASE;
+
   document.getElementById('responsable').value = r[8];
   document.getElementById('status').value      = r[9];
   document.getElementById('origen').value      = r[10];
 
+  // reset movimiento
   document.getElementById('tipo_movimiento').value = '';
+  document.getElementById('cantidad_mov').value = '';
+  document.getElementById('cantidad_mov').style.display = 'none';
+  document.getElementById('lblMovimiento').style.display = 'none';
   document.getElementById('btnEntrada').classList.remove('active');
   document.getElementById('btnSalida').classList.remove('active');
 }
 
 /* =====================================================
-   TIPO DE MOVIMIENTO
+   TIPO MOVIMIENTO
 ===================================================== */
 function setMovimiento(tipo){
+
   document.getElementById('tipo_movimiento').value = tipo;
-  document.getElementById('btnEntrada').classList.toggle('active', tipo==='ENTRADA');
-  document.getElementById('btnSalida').classList.toggle('active', tipo==='SALIDA');
+
+  document.getElementById('btnEntrada').classList.toggle(
+    'active', tipo === 'ENTRADA'
+  );
+  document.getElementById('btnSalida').classList.toggle(
+    'active', tipo === 'SALIDA'
+  );
+
+  document.getElementById('lblMovimiento').style.display = 'block';
+  document.getElementById('cantidad_mov').style.display = 'block';
+  document.getElementById('cantidad_mov').focus();
 }
 
 /* =====================================================
@@ -180,33 +186,40 @@ function setMovimiento(tipo){
 ===================================================== */
 function guardar(){
 
-  const tipo  = document.getElementById('tipo_movimiento').value;
-  const delta = Number(document.getElementById('cantidad').value || 0);
+  const tipo = document.getElementById('tipo_movimiento').value;
+  const mov  = Number(document.getElementById('cantidad_mov').value || 0);
 
   if(!tipo) return alert('Seleccione ENTRADA o SALIDA');
-  if(delta<=0) return alert('Cantidad inválida');
+  if(mov <= 0) return alert('Ingrese cantidad válida');
 
   let cantidadFinal = CANTIDAD_BASE;
-  if(tipo==='ENTRADA') cantidadFinal += delta;
-  if(tipo==='SALIDA')  cantidadFinal -= delta;
-  if(cantidadFinal<0)  return alert('Stock insuficiente');
+
+  if(tipo === 'ENTRADA') cantidadFinal += mov;
+  if(tipo === 'SALIDA')  cantidadFinal -= mov;
+
+  if(cantidadFinal < 0) return alert('Stock insuficiente');
 
   const payload = {
-    accion:'editar',
-    id:document.getElementById('id').value,
-    codigo:normalizarCodigo(document.getElementById('codigo').value),
-    cantidad:cantidadFinal,
-    responsable:document.getElementById('responsable').value,
-    status:document.getElementById('status').value,
-    origen:ORIGEN
+    accion: 'editar',
+    id: document.getElementById('id').value,
+    codigo: normalizarCodigo(document.getElementById('codigo').value),
+    cantidad: cantidadFinal,
+    responsable: document.getElementById('responsable').value,
+    status: document.getElementById('status').value,
+    origen: ORIGEN
   };
 
   fetch(URL_GS,{
     method:'POST',
     body:JSON.stringify(payload)
   })
-  .then(()=>{ cerrarModal(); cargar(); })
-  .catch(()=>alert('Error al guardar'));
+  .then(()=>{
+    cerrarModal();
+    cargar();
+  })
+  .catch(()=>{
+    alert('Error al guardar');
+  });
 }
 
 /* =====================================================
@@ -225,11 +238,13 @@ function eliminar(id){
 ===================================================== */
 function filtrar(txt){
   txt = txt.toLowerCase();
-  renderTabla(DATA.filter(r=>r.join(' ').toLowerCase().includes(txt)));
+  renderTabla(
+    DATA.filter(r => r.join(' ').toLowerCase().includes(txt))
+  );
 }
 
 /* =====================================================
-   LIMPIAR FORMULARIO
+   LIMPIAR
 ===================================================== */
 function limpiarFormulario(){
   document.querySelectorAll('#modal input, #modal select')
@@ -241,19 +256,20 @@ function limpiarFormulario(){
 /* =====================================================
    SCANNER + LINTERNA
 ===================================================== */
-let scanner=null, torchOn=false;
+let scanner = null;
+let torchOn = false;
 
 function abrirScanner(){
   if(!/android|iphone|ipad|mobile/i.test(navigator.userAgent))
-    return alert('Scanner solo en móvil');
+    return alert('Scanner solo disponible en móvil');
 
   document.getElementById('scannerBox').style.display='block';
   document.getElementById('torchBtn').style.display='block';
 
   scanner = new Html5Qrcode('scannerBox');
   scanner.start(
-    {facingMode:{exact:'environment'}},
-    {fps:10,qrbox:220},
+    { facingMode:{ exact:'environment' } },
+    { fps:10, qrbox:220 },
     txt=>{
       document.getElementById('codigo').value = txt.trim();
       cerrarScanner();
@@ -264,19 +280,19 @@ function abrirScanner(){
 
 function toggleTorch(){
   if(!scanner) return;
-  torchOn=!torchOn;
-  scanner.applyVideoConstraints({advanced:[{torch:torchOn}]});
-  document.getElementById('torchBtn').classList.toggle('active',torchOn);
+  torchOn = !torchOn;
+  scanner.applyVideoConstraints({ advanced:[{ torch: torchOn }] });
+  document.getElementById('torchBtn').classList.toggle('active', torchOn);
 }
 
 function cerrarScanner(){
   if(scanner){
     scanner.stop().then(()=>scanner.clear()).catch(()=>{});
-    scanner=null;
+    scanner = null;
   }
   document.getElementById('scannerBox').style.display='none';
   document.getElementById('torchBtn').style.display='none';
-  torchOn=false;
+  torchOn = false;
 }
 
 /* =====================================================
