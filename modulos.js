@@ -3,8 +3,7 @@
 ====================================================== */
 
 /* ================= CONFIG ================= */
-const API_MODULOS =
-  "https://script.google.com/macros/s/AKfycbz1Gm3nlFLiNi1jNJB2-h1WkKcbbpLUS0fTKSuPmUZ-yc7n3yOkmaQN4egeOm9bLa0p/exec";
+const"https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
 /* ================= ESTADO ================= */
 let MODULOS = [];
@@ -212,3 +211,4 @@ async function eliminarModulo(id){
 function cerrarModulo(){
   modalModulo.style.display = "none";
 }
+
