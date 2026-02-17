@@ -389,7 +389,6 @@ tbody tr:hover{
   }
 }
 
-/* ===== CONTENEDOR FOTOS (ANTI OCULTO) ===== */
 .foto-wrap{
   display:flex;
   flex-wrap:wrap;
@@ -398,17 +397,14 @@ tbody tr:hover{
   align-items:center;
 }
 
-td .foto-wrap{
-  justify-content:center;
+td{
+  overflow: visible !important;
 }
 
-.row-card .foto-wrap{
-  justify-content:flex-start;
+table{
+  table-layout: fixed;
 }
 
-.foto-wrap img{
-  display:block;
-}
 
  
 
@@ -659,45 +655,29 @@ render();
      RENDER
   ====================================================== */
   function render(){
-   cursorIndex = -1;
-   renderKPIs();
-    tbody.innerHTML = "";
-    mobileList.innerHTML = "";
-  
-    if(isMobile()){
-      FILT.forEach(r=>{
-        mobileList.innerHTML += `
-        <div class="row-card">
-          <b>${r.pedido}</b> · ${r.status}<br>
-          ${r.cliente}<br>
-          ${r.direccion} (${r.comuna})<br>
-          🚚 ${r.transporte||""}<br>
-          📦 ${r.etiquetas||0}<br>
-          👤 ${r.responsable||""}<br>
-          ⏱ ${r.horaEntrega||""}<br><br>
-          ${renderFotos(r.foto)}
-          <div class="row-actions">
-            <button onclick="openMap('${r.direccion}','${r.comuna}')">📍</button>
-            <button onclick="openModal(RAW.find(x=>x._row==${r._row}))">✏️</button>
-            <button onclick="delRow(${r._row})">🗑️</button>
-          </div>
-        </div>`;
-      });
-    } else {
-      FILT.forEach(r=>{
-        tbody.innerHTML += `
+  cursorIndex = -1;
+  renderKPIs();
+
+  // limpiar contenedores
+  tbody.innerHTML = "";
+  mobileList.innerHTML = "";
+
+  /* ================= DESKTOP ================= */
+  if(!isMobile()){
+    FILT.forEach(r=>{
+      tbody.insertAdjacentHTML("beforeend", `
         <tr>
-          <td class="fecha">${r.fechaIngreso||""}</td>
-          <td>${r.pedido}</td>
-          <td>${r.cliente}</td>
-          <td>${r.direccion}</td>
-          <td>${r.comuna}</td>
-          <td>${r.transporte||""}</td>
-          <td>${r.etiquetas||0}</td>
-          <td>${r.observaciones||""}</td>
-          <td>${r.status}</td>
-          <td>${r.responsable||""}</td>
-          <td>${r.horaEntrega||""}</td>
+          <td class="fecha">${r.fechaIngreso || ""}</td>
+          <td>${r.pedido || ""}</td>
+          <td>${r.cliente || ""}</td>
+          <td>${r.direccion || ""}</td>
+          <td>${r.comuna || ""}</td>
+          <td>${r.transporte || ""}</td>
+          <td>${r.etiquetas || 0}</td>
+          <td>${r.observaciones || ""}</td>
+          <td>${r.status || ""}</td>
+          <td>${r.responsable || ""}</td>
+          <td>${r.horaEntrega || ""}</td>
           <td>${renderFotos(r.foto)}</td>
           <td>
             <div class="actions">
@@ -706,10 +686,37 @@ render();
               <button onclick="delRow(${r._row})">🗑️</button>
             </div>
           </td>
-        </tr>`;
-      });
-    }
+        </tr>
+      `);
+    });
   }
+
+  /* ================= MOBILE ================= */
+  else{
+    FILT.forEach(r=>{
+      mobileList.insertAdjacentHTML("beforeend", `
+        <div class="row-card">
+          <b>${r.pedido || ""}</b> · ${r.status || ""}<br>
+          ${r.cliente || ""}<br>
+          ${r.direccion || ""} (${r.comuna || ""})<br>
+          🚚 ${r.transporte || ""}<br>
+          📦 ${r.etiquetas || 0}<br>
+          👤 ${r.responsable || ""}<br>
+          ⏱ ${r.horaEntrega || ""}<br><br>
+
+          ${renderFotos(r.foto)}
+
+          <div class="row-actions">
+            <button onclick="openMap('${r.direccion}','${r.comuna}')">📍</button>
+            <button onclick="openModal(RAW.find(x=>x._row==${r._row}))">✏️</button>
+            <button onclick="delRow(${r._row})">🗑️</button>
+          </div>
+        </div>
+      `);
+    });
+  }
+}
+
   
  function moveCursor(dir){
   const rows = [...tbody.querySelectorAll("tr")];
@@ -779,7 +786,6 @@ function renderFotos(f){
     </div>
   `;
 }
-
 
 
   
