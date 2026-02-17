@@ -1,0 +1,181 @@
+*{box-sizing:border-box;font-family:system-ui}
+
+body{
+  margin:0;
+  background:#f4f6f8;
+}
+
+header{
+  background:#fff;
+  padding:16px;
+  font-weight:900;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  box-shadow:0 4px 14px rgba(0,0,0,.1);
+}
+
+header button{
+  background:#16a34a;
+  color:#fff;
+  border:none;
+  padding:10px 16px;
+  border-radius:12px;
+  font-weight:900;
+}
+
+.card{
+  background:#fff;
+  margin:14px;
+  padding:14px;
+  border-radius:18px;
+  box-shadow:0 10px 24px rgba(0,0,0,.08);
+}
+
+.search{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:2px solid #e5e7eb;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  padding:8px;
+  font-size:13px;
+}
+
+th{
+  color:#6b7280;
+  text-align:left;
+}
+
+.actions-td button{
+  border:none;
+  padding:6px 10px;
+  border-radius:8px;
+  font-weight:700;
+}
+
+.edit{background:#14b8a6;color:#fff}
+.del{background:#ef4444;color:#fff}
+
+/* ===== MODAL ===== */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:none;
+  justify-content:center;
+  align-items:center;
+}
+
+.modal.active{display:flex}
+
+.modal-card{
+  background:#fff;
+  width:95%;
+  max-width:420px;
+  border-radius:20px;
+  overflow:hidden;
+}
+
+.modal-body{
+  padding:16px;
+}
+
+.modal-footer{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  padding:12px;
+  border-top:1px solid #e5e7eb;
+}
+
+.modal-footer button{
+  padding:12px;
+  border:none;
+  border-radius:14px;
+  font-weight:900;
+}
+
+.modal-footer button:first-child{
+  background:#16a34a;
+  color:#fff;
+}
+
+.modal-footer button:last-child{
+  background:#e5e7eb;
+}
+
+/* ===== FORM ===== */
+label{
+  font-size:11px;
+  font-weight:800;
+  color:#6b7280;
+  margin-top:8px;
+  display:block;
+}
+
+input,select{
+  width:100%;
+  padding:10px;
+  border-radius:12px;
+  border:2px solid #e5e7eb;
+  margin-bottom:8px;
+}
+
+/* ===== BOTONES ===== */
+.btn.scan{
+  width:100%;
+  margin-top:6px;
+  background:#0f766e;
+  color:#fff;
+  border:none;
+  padding:10px;
+  border-radius:14px;
+  font-weight:900;
+}
+
+.movimiento{
+  display:flex;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+#btnEntrada.active,
+#btnSalida.active{
+  background:#16a34a;
+}
+
+/* ===== SUGERENCIAS ===== */
+.suggest{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  display:none;
+}
+
+.suggest div{
+  padding:8px;
+  cursor:pointer;
+}
+
+.suggest div:hover{
+  background:#f1f5f9;
+}
+
+/* ===== MOBILE CARDS ===== */
+.cards{display:none}
+
+@media(max-width:768px){
+  table{display:none}
+  .cards{
+    display:grid;
+    gap:12px;
+  }
+}
