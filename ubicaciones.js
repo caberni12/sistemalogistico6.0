@@ -1,8 +1,7 @@
 /* =====================================================
    CONFIGURACIÓN
 ===================================================== */
-const URL_GS =
-  'https://script.google.com/macros/s/AKfycbwP-NHZUqboSXDPq8HcWEl1qseurNEym8D0jv__DgZG1N0xkEmAQOSrKmLvXrxRZACv1g/exec';
+const URL_GS = 'https://script.google.com/macros/s/AKfycbwP-NHZUqboSXDPq8HcWEl1qseurNEym8D0jv__DgZG1N0xkEmAQOSrKmLvXrxRZACv1g/exec';
 
 let DATA = [];
 let ORIGEN = /android|iphone|ipad|mobile/i.test(navigator.userAgent)
@@ -84,28 +83,33 @@ function buscarCodigo(){
 function selectProducto(c,d){
   document.getElementById('codigo').value = c;
   document.getElementById('descripcion').value = d;
-  document.getElementById('suggest').style.display = 'none';
+  document.getElementById('suggest').style.display='none';
 }
 
 /* =====================================================
-   CARGAR DATOS  (🔥 FIX DEFINITIVO)
+   CARGAR DATOS  (🔥 CLAVE)
 ===================================================== */
 function cargar(){
   fetch(URL_GS)
-    .then(r=>r.json())
-    .then(d=>{
-      // ✔ soporta array directo o { data: [] }
+    .then(r => r.json())
+    .then(d => {
+
+      console.log('DATA URL:', d); // DEBUG
+
+      // SOPORTA ARRAY DIRECTO O {data:[]}
       DATA = Array.isArray(d) ? d : (d.data || []);
+
       renderTabla(DATA);
     })
-    .catch(()=>{
+    .catch(err=>{
+      console.error('ERROR FETCH:', err);
       DATA = [];
       renderTabla([]);
     });
 }
 
 /* =====================================================
-   RENDER TABLA
+   TABLA
 ===================================================== */
 function renderTabla(arr){
   const t = document.getElementById('tabla');
@@ -114,16 +118,16 @@ function renderTabla(arr){
   arr.forEach(r=>{
     t.innerHTML += `
       <tr>
-        <td>${r[5]}</td>
-        <td>${r[6]}</td>
-        <td>${r[4]}</td>
-        <td>${r[7]}</td>
+        <td>${r[5] ?? ''}</td>
+        <td>${r[6] ?? ''}</td>
+        <td>${r[4] ?? ''}</td>
+        <td>${r[7] ?? ''}</td>
         <td>${formatFecha(r[1])}</td>
         <td>${formatFecha(r[2])}</td>
         <td>${formatFecha(r[3])}</td>
-        <td>${r[8]}</td>
-        <td>${r[9]}</td>
-        <td>${r[10]}</td>
+        <td>${r[8] ?? ''}</td>
+        <td>${r[9] ?? ''}</td>
+        <td>${r[10] ?? ''}</td>
         <td class="actions-td">
           <button class="edit" onclick='editar(${JSON.stringify(r)})'>✏️</button>
           <button class="del" onclick='eliminar("${r[0]}")'>🗑️</button>
@@ -148,15 +152,14 @@ function editar(r){
   document.getElementById('ubicacion').value   = r[4];
   document.getElementById('codigo').value      = r[5];
   document.getElementById('descripcion').value = r[6];
-
-  document.getElementById('cantidad').value = CANTIDAD_BASE;
-
+  document.getElementById('cantidad').value    = CANTIDAD_BASE;
   document.getElementById('responsable').value = r[8];
   document.getElementById('status').value      = r[9];
   document.getElementById('origen').value      = r[10];
 
-  document.getElementById('tipo_movimiento').value = '';
-  document.getElementById('cantidad_mov').value = '';
+  // reset movimiento
+  document.getElementById('tipo_movimiento').value='';
+  document.getElementById('cantidad_mov').value='';
   document.getElementById('cantidad_mov').style.display='none';
   document.getElementById('lblMovimiento').style.display='none';
   document.getElementById('btnEntrada').classList.remove('active');
@@ -218,7 +221,7 @@ function eliminar(id){
 ===================================================== */
 function filtrar(txt){
   txt = txt.toLowerCase();
-  renderTabla(DATA.filter(r=>r.join(' ').toLowerCase().includes(txt)));
+  renderTabla(DATA.filter(r => r.join(' ').toLowerCase().includes(txt)));
 }
 
 /* =====================================================
@@ -227,6 +230,8 @@ function filtrar(txt){
 function limpiarFormulario(){
   document.querySelectorAll('#modal input, #modal select')
     .forEach(i=>i.value='');
+  const s = document.getElementById('suggest');
+  if(s) s.style.display='none';
 }
 
 /* =====================================================
