@@ -583,198 +583,119 @@ tbody tr{
 </div>
 </div>
 </div>
-
 <script>
-/* =====================================================
+
+    /* =====================================================
    CONFIGURACIÓN
 ===================================================== */
 const URL_GS =
   'https://script.google.com/macros/s/AKfycbwP-NHZUqboSXDPq8HcWEl1qseurNEym8D0jv__DgZG1N0xkEmAQOSrKmLvXrxRZACv1g/exec';
 
 let DATA = [];
-let ORIGEN = 'WEB';
-let timerBuscar = null;
-
-/* =====================================================
-   DETECTAR ORIGEN
-===================================================== */
-if (/android|iphone|ipad|mobile/i.test(navigator.userAgent)) {
-  ORIGEN = 'MOBILE';
-}
+let ORIGEN = /android|iphone|ipad|mobile/i.test(navigator.userAgent)
+  ? 'MOBILE'
+  : 'WEB';
 
 /* =====================================================
    UTILIDADES
 ===================================================== */
-function normalizarCodigo(v) {
+function normalizarCodigo(v){
   return String(v ?? '').trim();
 }
 
-function formatFecha(f) {
-  if (!f) return '';
+function formatFecha(f){
+  if(!f) return '';
   const d = new Date(f);
-  if (isNaN(d)) return f;
-  return d.toLocaleString('es-CL', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+  if(isNaN(d)) return f;
+  return d.toLocaleString('es-CL',{
+    day:'2-digit',month:'short',year:'numeric',
+    hour:'2-digit',minute:'2-digit'
   });
-}
-
-/* =====================================================
-   PROGRESS BAR
-===================================================== */
-function startProgress() {
-  const b = document.getElementById('progress-bar');
-  if (!b) return;
-  b.classList.add('active');
-  b.style.width = '30%';
-}
-
-function endProgress() {
-  const b = document.getElementById('progress-bar');
-  if (!b) return;
-  b.style.width = '100%';
-  setTimeout(() => {
-    b.classList.remove('active');
-    b.style.width = '0%';
-  }, 400);
-}
-
-/* =====================================================
-   LOADER BOTÓN
-===================================================== */
-function startBtnLoader(btn) {
-  if (!btn) return;
-  btn.classList.add('loading');
-  const txt = btn.querySelector('.txt');
-  if (txt) txt.style.display = 'none';
-  const l = document.createElement('div');
-  l.className = 'loader-btn';
-  btn.appendChild(l);
-}
-
-function endBtnLoader(btn) {
-  if (!btn) return;
-  btn.classList.remove('loading');
-  const l = btn.querySelector('.loader-btn');
-  if (l) l.remove();
-  const txt = btn.querySelector('.txt');
-  if (txt) txt.style.display = 'inline';
 }
 
 /* =====================================================
    MODAL
 ===================================================== */
-function abrirModal() {
+function abrirModal(){
   limpiarFormulario();
   document.getElementById('origen').value = ORIGEN;
   document.getElementById('modal').classList.add('active');
 }
 
-function cerrarModal() {
+function cerrarModal(){
   cerrarScanner();
   document.getElementById('modal').classList.remove('active');
 }
 
-
 /* =====================================================
-   AUTOCOMPLETE (MAESTRA)
+   AUTOCOMPLETE CÓDIGO
 ===================================================== */
-function buscarCodigo() {
+let timerBuscar = null;
+
+function buscarCodigo(){
   clearTimeout(timerBuscar);
 
-  const codigoInput = document.getElementById('codigo');
-  const descripcion = document.getElementById('descripcion');
-  const suggest = document.getElementById('suggest');
+  const cod = normalizarCodigo(document.getElementById('codigo').value);
+  const desc = document.getElementById('descripcion');
+  const sug  = document.getElementById('suggest');
 
-  const cod = normalizarCodigo(codigoInput.value);
-
-  if (!cod) {
-    descripcion.value = '';
-    if (suggest) suggest.style.display = 'none';
+  if(!cod){
+    desc.value = '';
+    sug.style.display = 'none';
     return;
   }
 
-  timerBuscar = setTimeout(() => {
+  timerBuscar = setTimeout(()=>{
     fetch(`${URL_GS}?accion=buscar&codigo=${encodeURIComponent(cod)}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.ok) {
-          // 🔥 CLAVE: asignar automáticamente
-          descripcion.value = d.descripcion;
-
-          if (suggest) {
-            suggest.innerHTML = `
-              <div onclick="selectProducto('${d.codigo}','${d.descripcion}')">
-                ${d.codigo} – ${d.descripcion}
-              </div>`;
-            suggest.style.display = 'block';
-          }
-        } else {
-          descripcion.value = '';
-          if (suggest) suggest.style.display = 'none';
+      .then(r=>r.json())
+      .then(d=>{
+        if(d.ok){
+          desc.value = d.descripcion;
+          sug.innerHTML = `
+            <div onclick="selectProducto('${d.codigo}','${d.descripcion}')">
+              ${d.codigo} – ${d.descripcion}
+            </div>`;
+          sug.style.display = 'block';
+        }else{
+          desc.value='';
+          sug.style.display='none';
         }
       })
-      .catch(() => {
-        descripcion.value = '';
-        if (suggest) suggest.style.display = 'none';
+      .catch(()=>{
+        desc.value='';
+        sug.style.display='none';
       });
-  }, 300);
+  },300);
 }
 
-function selectProducto(cod, desc) {
-  document.getElementById('codigo').value = cod;
-  document.getElementById('descripcion').value = desc;
+function selectProducto(c,d){
+  document.getElementById('codigo').value = c;
+  document.getElementById('descripcion').value = d;
   document.getElementById('suggest').style.display = 'none';
 }
 
 /* =====================================================
-   GUARDAR (AGREGAR / EDITAR)
+   LISTADO
 ===================================================== */
-
-let CANTIDAD_BASE = 0;
-
-function setMovimiento(tipo){
-  document.getElementById('tipo_movimiento').value = tipo;
-  document.getElementById('btnEntrada').classList.toggle('active', tipo === 'ENTRADA');
-  document.getElementById('btnSalida').classList.toggle('active', tipo === 'SALIDA');
-}
-
-
-
-/* =====================================================
-   LISTAR / TABLA
-===================================================== */
-function cargar() {
-  startProgress();
-
+function cargar(){
   fetch(`${URL_GS}?accion=listar`)
-    .then((r) => r.json())
-    .then((d) => {
+    .then(r=>r.json())
+    .then(d=>{
       DATA = d.data || [];
       renderTabla(DATA);
-      endProgress();
     })
-    .catch(() => {
-      DATA = [];
-      renderTabla([]);
-      endProgress();
-    });
+    .catch(()=>renderTabla([]));
 }
 
-function renderTabla(arr) {
-  const tabla = document.getElementById('tabla');
-  const cards = document.getElementById('cards');
+function renderTabla(arr){
+  const t = document.getElementById('tabla');
+  const c = document.getElementById('cards');
 
-  tabla.innerHTML = '';
-  cards.innerHTML = '';
+  t.innerHTML = '';
+  c.innerHTML = '';
 
-  arr.forEach((r) => {
-
-    /* ===== TABLA (WEB) ===== */
-    tabla.innerHTML += `
+  arr.forEach(r=>{
+    t.innerHTML += `
       <tr>
         <td>${r[5]}</td>
         <td>${r[6]}</td>
@@ -790,238 +711,164 @@ function renderTabla(arr) {
           <button class="edit" onclick='editar(${JSON.stringify(r)})'>✏️</button>
           <button class="del" onclick='eliminar("${r[0]}")'>🗑️</button>
         </td>
-      </tr>
-    `;
+      </tr>`;
 
-function guardar(){
-
-  const tipo = document.getElementById('tipo_movimiento').value;
-  const delta = Number(document.getElementById('cantidad').value || 0);
-
-  if(!tipo){
-    alert('Seleccione ENTRADA o SALIDA');
-    return;
-  }
-
-  if(delta <= 0){
-    alert('Cantidad inválida');
-    return;
-  }
-
-  let cantidadFinal = CANTIDAD_BASE;
-
-  if(tipo === 'ENTRADA') cantidadFinal += delta;
-  if(tipo === 'SALIDA')  cantidadFinal -= delta;
-
-  if(cantidadFinal < 0){
-    alert('Stock insuficiente');
-    return;
-  }
-
-  const payload = {
-    accion: 'editar',
-    id: document.getElementById('id').value,
-    codigo: normalizarCodigo(document.getElementById('codigo').value),
-    cantidad: cantidadFinal,
-    responsable: document.getElementById('responsable').value,
-    status: document.getElementById('status').value,
-    origen: ORIGEN
-  };
-
-  fetch(URL_GS,{
-    method:'POST',
-    body:JSON.stringify(payload)
-  })
-  .then(()=>{
-    cerrarModal();
-    cargar();
-  })
-  .catch(()=>{
-    alert('Error al guardar');
-  });
-}
-
-    /* ===== TARJETA (MÓVIL) ===== */
-    cards.innerHTML += `
+    c.innerHTML += `
       <div class="card-item">
         <div class="card-row"><b>Código</b><span>${r[5]}</span></div>
         <div class="card-row"><b>Descripción</b><span>${r[6]}</span></div>
         <div class="card-row"><b>Ubicación</b><span>${r[4]}</span></div>
         <div class="card-row"><b>Cantidad</b><span>${r[7]}</span></div>
-        <div class="card-row"><b>Registro</b><span>${formatFecha(r[1])}</span></div>
-        <div class="card-row"><b>Entrada</b><span>${formatFecha(r[2])}</span></div>
-        <div class="card-row"><b>Salida</b><span>${formatFecha(r[3])}</span></div>
-        <div class="card-row"><b>Responsable</b><span>${r[8]}</span></div>
-        <div class="card-row"><b>Status</b><span>${r[9]}</span></div>
-        <div class="card-row"><b>Origen</b><span>${r[10]}</span></div>
-
         <div class="card-actions">
-          <button class="edit" onclick='editar(${JSON.stringify(r)})'>✏️ Editar</button>
-          <button class="del" onclick='eliminar("${r[0]}")'>🗑️ Eliminar</button>
+          <button class="edit" onclick='editar(${JSON.stringify(r)})'>Editar</button>
+          <button class="del" onclick='eliminar("${r[0]}")'>Eliminar</button>
         </div>
-      </div>
-    `;
+      </div>`;
   });
 }
 
-
 /* =====================================================
-   EDITAR / ELIMINAR
+   EDITAR (CLAVE)
 ===================================================== */
+let CANTIDAD_BASE = 0;
 
 function editar(r){
 
   abrirModal();
 
-  // 🔒 stock actual (base para cálculo)
   CANTIDAD_BASE = Number(r[7]) || 0;
 
-  // id del registro
   document.getElementById('id').value = r[0];
-
-  // fechas
   document.getElementById('fecha_entrada').value = r[2] ? r[2].slice(0,10) : '';
   document.getElementById('fecha_salida').value  = r[3] ? r[3].slice(0,10) : '';
-
-  // datos
   document.getElementById('ubicacion').value   = r[4];
   document.getElementById('codigo').value      = r[5];
   document.getElementById('descripcion').value = r[6];
-
-  // ⚠️ input cantidad queda VACÍO (se ingresa solo el movimiento)
-  document.getElementById('cantidad').value = '';
-
+  document.getElementById('cantidad').value    = '';
   document.getElementById('responsable').value = r[8];
   document.getElementById('status').value      = r[9];
   document.getElementById('origen').value      = r[10];
 
-  // reset tipo movimiento
   document.getElementById('tipo_movimiento').value = '';
   document.getElementById('btnEntrada').classList.remove('active');
   document.getElementById('btnSalida').classList.remove('active');
 }
 
-
-
-function eliminar(id) {
-  if (!confirm('¿Eliminar este movimiento?')) return;
-
-  startProgress();
-
-  fetch(URL_GS, {
-    method: 'POST',
-    body: JSON.stringify({ accion: 'eliminar', id }),
-  })
-    .then(() => cargar())
-    .catch(() => alert('Error al eliminar'));
+/* =====================================================
+   ENTRADA / SALIDA (FRONTEND)
+===================================================== */
+function setMovimiento(tipo){
+  document.getElementById('tipo_movimiento').value = tipo;
+  document.getElementById('btnEntrada').classList.toggle('active', tipo==='ENTRADA');
+  document.getElementById('btnSalida').classList.toggle('active', tipo==='SALIDA');
 }
 
 /* =====================================================
-   SCANNER (SOLO MÓVIL)
+   GUARDAR (CÁLCULO FINAL)
 ===================================================== */
+function guardar(){
+
+  const tipo  = document.getElementById('tipo_movimiento').value;
+  const delta = Number(document.getElementById('cantidad').value || 0);
+
+  if(!tipo) return alert('Seleccione ENTRADA o SALIDA');
+  if(delta<=0) return alert('Cantidad inválida');
+
+  let cantidadFinal = CANTIDAD_BASE;
+  if(tipo==='ENTRADA') cantidadFinal += delta;
+  if(tipo==='SALIDA')  cantidadFinal -= delta;
+  if(cantidadFinal<0)  return alert('Stock insuficiente');
+
+  const payload = {
+    accion:'editar',
+    id:document.getElementById('id').value,
+    codigo:normalizarCodigo(document.getElementById('codigo').value),
+    cantidad:cantidadFinal,
+    responsable:document.getElementById('responsable').value,
+    status:document.getElementById('status').value,
+    origen:ORIGEN
+  };
+
+  fetch(URL_GS,{method:'POST',body:JSON.stringify(payload)})
+    .then(()=>{ cerrarModal(); cargar(); })
+    .catch(()=>alert('Error al guardar'));
+}
+
 /* =====================================================
-   SCANNER + LINTERNA (SOLO MÓVIL)
+   ELIMINAR
 ===================================================== */
+function eliminar(id){
+  if(!confirm('¿Eliminar este movimiento?')) return;
+  fetch(URL_GS,{
+    method:'POST',
+    body:JSON.stringify({accion:'eliminar',id})
+  }).then(cargar);
+}
+
 /* =====================================================
-   SCANNER + LINTERNA (SOLO MÓVIL)
+   FILTRO
 ===================================================== */
-let scanner = null;
-let torchOn = false;
+function filtrar(txt){
+  txt = txt.toLowerCase();
+  renderTabla(DATA.filter(r=>r.join(' ').toLowerCase().includes(txt)));
+}
+
+/* =====================================================
+   LIMPIAR
+===================================================== */
+function limpiarFormulario(){
+  document.querySelectorAll('#modal input, #modal select')
+    .forEach(i=>i.value='');
+  const s = document.getElementById('suggest');
+  if(s) s.style.display='none';
+}
+
+/* =====================================================
+   SCANNER + LINTERNA
+===================================================== */
+let scanner=null, torchOn=false;
 
 function abrirScanner(){
-  if(!/android|iphone|ipad|mobile/i.test(navigator.userAgent)){
-    alert('El scanner solo está disponible en móvil');
-    return;
-  }
+  if(!/android|iphone|ipad|mobile/i.test(navigator.userAgent))
+    return alert('Scanner solo en móvil');
 
-  const box = document.getElementById('scannerBox');
-  const torchBtn = document.getElementById('torchBtn');
-
-  box.style.display = 'block';
-  torchBtn.style.display = 'block';
-  torchBtn.classList.remove('active');
-  torchOn = false;
+  document.getElementById('scannerBox').style.display='block';
+  document.getElementById('torchBtn').style.display='block';
 
   scanner = new Html5Qrcode('scannerBox');
-
   scanner.start(
-    { facingMode: { exact: "environment" } }, // cámara trasera
-    { fps: 10, qrbox: 220 },
-    txt => {
-      // Al escanear
-      document.getElementById('codigo').value = String(txt).trim();
+    {facingMode:{exact:'environment'}},
+    {fps:10,qrbox:220},
+    txt=>{
+      document.getElementById('codigo').value = txt.trim();
       cerrarScanner();
-      buscarCodigo(); // trae descripción automáticamente
-    },
-    () => {}
+      buscarCodigo();
+    }
   );
 }
 
 function toggleTorch(){
   if(!scanner) return;
-
-  const caps = scanner.getRunningTrackCapabilities?.();
-  if(!caps || !caps.torch){
-    alert('Este dispositivo no soporta linterna');
-    return;
-  }
-
-  torchOn = !torchOn;
-  scanner.applyVideoConstraints({ advanced:[{ torch: torchOn }] });
-
-  const torchBtn = document.getElementById('torchBtn');
-  torchBtn.classList.toggle('active', torchOn);
+  torchOn=!torchOn;
+  scanner.applyVideoConstraints({advanced:[{torch:torchOn}]});
+  document.getElementById('torchBtn').classList.toggle('active',torchOn);
 }
 
 function cerrarScanner(){
-  const box = document.getElementById('scannerBox');
-  const torchBtn = document.getElementById('torchBtn');
-
   if(scanner){
-    scanner.stop().then(()=>{
-      scanner.clear();
-      scanner = null;
-    }).catch(()=>{});
+    scanner.stop().then(()=>scanner.clear()).catch(()=>{});
+    scanner=null;
   }
-
-  if(box) box.style.display = 'none';
-  if(torchBtn) torchBtn.style.display = 'none';
-  torchOn = false;
-}
-
-
-
-
-/* =====================================================
-   FILTRO
-===================================================== */
-function filtrar(txt) {
-  txt = txt.toLowerCase();
-  renderTabla(
-    DATA.filter((r) =>
-      r.join(' ').toLowerCase().includes(txt)
-    )
-  );
-}
-
-/* =====================================================
-   LIMPIAR FORMULARIO
-===================================================== */
-function limpiarFormulario() {
-  document
-    .querySelectorAll('#modal input, #modal select')
-    .forEach((i) => (i.value = ''));
-  const s = document.getElementById('suggest');
-  if (s) s.style.display = 'none';
+  document.getElementById('scannerBox').style.display='none';
+  document.getElementById('torchBtn').style.display='none';
+  torchOn=false;
 }
 
 /* =====================================================
    INIT
 ===================================================== */
 document.addEventListener('DOMContentLoaded', cargar);
-
-    </script>
-    
+</script>
 <script src="segurity.js"></script>
 </body>
 </html>
