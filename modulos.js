@@ -1,13 +1,14 @@
 /* ======================================================
-   MODULOS.JS – CRUD POR ID (MODAL + TARJETAS MÓVIL)
+   MODULOS.JS – CRUD POR ID (MODAL + TABLA + TARJETAS MÓVIL)
 ====================================================== */
 
 /* ================= CONFIG ================= */
-const"https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
+const API_MODULOS =
+  "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
 /* ================= ESTADO ================= */
 let MODULOS = [];
-let MODO_MODULO = "crear";
+let MODO_MODULO = "crear"; // crear | editar
 let MODULO_ID = null;
 
 /* ================= DOM ================= */
@@ -24,6 +25,7 @@ let modalModulo,
    INIT
 ====================================================== */
 document.addEventListener("DOMContentLoaded", () => {
+
   modalModulo       = document.getElementById("modalModulo");
   modalListaModulos = document.getElementById("modalListaModulos");
   tablaModulos      = document.getElementById("tablaModulos");
@@ -33,16 +35,21 @@ document.addEventListener("DOMContentLoaded", () => {
   m_icono   = document.getElementById("m_icono");
   m_permiso = document.getElementById("m_permiso");
   m_activo  = document.getElementById("m_activo");
+
 });
 
 /* ======================================================
-   ABRIR MODALES
+   ABRIR / CERRAR MODALES
 ====================================================== */
 function abrirCrearModulo(){
   MODO_MODULO = "crear";
   MODULO_ID = null;
   limpiarModulo();
   modalModulo.style.display = "flex";
+}
+
+function cerrarModulo(){
+  modalModulo.style.display = "none";
 }
 
 function abrirListaModulos(){
@@ -55,16 +62,25 @@ function cerrarListaModulos(){
 }
 
 /* ======================================================
-   CARGAR
+   CARGAR MODULOS
 ====================================================== */
 async function cargarModulos(){
-  tablaModulos.innerHTML = `<tr><td colspan="5">Cargando…</td></tr>`;
 
-  const r = await fetch(API_MODULOS + "?action=listarModulos");
-  const d = await r.json();
+  tablaModulos.innerHTML =
+    `<tr><td colspan="5">Cargando…</td></tr>`;
 
-  MODULOS = d.data || [];
-  renderModulos();
+  try{
+    const r = await fetch(API_MODULOS + "?action=listarModulos");
+    const d = await r.json();
+
+    MODULOS = d.data || [];
+    renderModulos();
+
+  }catch(e){
+    tablaModulos.innerHTML =
+      `<tr><td colspan="5">Error al cargar</td></tr>`;
+    console.error(e);
+  }
 }
 
 /* ======================================================
@@ -72,13 +88,16 @@ async function cargarModulos(){
 ====================================================== */
 function renderModulos(){
 
-  tablaModulos.innerHTML = "";
   const cards = document.getElementById("modulosCards");
+
+  tablaModulos.innerHTML = "";
   cards.innerHTML = "";
 
   if(!MODULOS.length){
-    tablaModulos.innerHTML = `<tr><td colspan="5">Sin módulos</td></tr>`;
-    cards.innerHTML = `<p style="text-align:center">Sin módulos</p>`;
+    tablaModulos.innerHTML =
+      `<tr><td colspan="5">Sin módulos</td></tr>`;
+    cards.innerHTML =
+      `<p style="text-align:center">Sin módulos</p>`;
     return;
   }
 
@@ -93,8 +112,14 @@ function renderModulos(){
         <td>${m[5]}</td>
         <td>
           <button class="btn-edit"
-            onclick="editarModulo(${m[0]},
-              '${m[1]}','${m[2]}','${m[3]}','${m[4]}','${m[5]}')">
+            onclick="editarModulo(
+              ${m[0]},
+              '${escapeJS(m[1])}',
+              '${escapeJS(m[2])}',
+              '${escapeJS(m[3])}',
+              '${escapeJS(m[4])}',
+              '${m[5]}'
+            )">
             Editar
           </button>
           <button class="btn-danger"
@@ -119,8 +144,14 @@ function renderModulos(){
 
         <div class="modulo-actions">
           <button class="btn-edit"
-            onclick="editarModulo(${m[0]},
-              '${m[1]}','${m[2]}','${m[3]}','${m[4]}','${m[5]}')">
+            onclick="editarModulo(
+              ${m[0]},
+              '${escapeJS(m[1])}',
+              '${escapeJS(m[2])}',
+              '${escapeJS(m[3])}',
+              '${escapeJS(m[4])}',
+              '${m[5]}'
+            )">
             Editar
           </button>
           <button class="btn-danger"
@@ -137,6 +168,7 @@ function renderModulos(){
    EDITAR
 ====================================================== */
 function editarModulo(id,nombre,archivo,icono,permiso,activo){
+
   MODO_MODULO = "editar";
   MODULO_ID = id;
 
@@ -151,7 +183,7 @@ function editarModulo(id,nombre,archivo,icono,permiso,activo){
 }
 
 /* ======================================================
-   LIMPIAR
+   LIMPIAR FORM
 ====================================================== */
 function limpiarModulo(){
   m_nombre.value  = "";
@@ -162,17 +194,20 @@ function limpiarModulo(){
 }
 
 /* ======================================================
-   GUARDAR
+   GUARDAR (CREAR / EDITAR)
 ====================================================== */
 async function guardarModulo(){
+
   const payload = {
-    action: MODO_MODULO === "editar" ? "editarModulo" : "crearModulo",
-    id: MODULO_ID,
-    nombre: m_nombre.value.trim(),
-    archivo: m_archivo.value.trim(),
-    icono: m_icono.value.trim(),
-    permiso: m_permiso.value.trim(),
-    activo: m_activo.value
+    action : MODO_MODULO === "editar"
+              ? "editarModulo"
+              : "crearModulo",
+    id      : MODULO_ID,
+    nombre  : m_nombre.value.trim(),
+    archivo : m_archivo.value.trim(),
+    icono   : m_icono.value.trim(),
+    permiso : m_permiso.value.trim(),
+    activo  : m_activo.value
   };
 
   if(!payload.nombre || !payload.archivo || !payload.permiso){
@@ -180,35 +215,54 @@ async function guardarModulo(){
     return;
   }
 
-  await fetch(API_MODULOS,{
-    method:"POST",
-    headers:{ "Content-Type":"text/plain" },
-    body: JSON.stringify(payload)
-  });
+  try{
+    await fetch(API_MODULOS,{
+      method  : "POST",
+      headers : { "Content-Type":"text/plain" },
+      body    : JSON.stringify(payload)
+    });
 
-  cerrarModulo();
-  cargarModulos();
+    cerrarModulo();
+    cargarModulos();
+
+  }catch(e){
+    alert("Error al guardar");
+    console.error(e);
+  }
 }
 
 /* ======================================================
    ELIMINAR
 ====================================================== */
 async function eliminarModulo(id){
+
   if(!confirm("¿Eliminar módulo?")) return;
 
-  await fetch(API_MODULOS,{
-    method:"POST",
-    headers:{ "Content-Type":"text/plain" },
-    body: JSON.stringify({ action:"eliminarModulo", id })
-  });
+  try{
+    await fetch(API_MODULOS,{
+      method  : "POST",
+      headers : { "Content-Type":"text/plain" },
+      body    : JSON.stringify({
+        action:"eliminarModulo",
+        id
+      })
+    });
 
-  cargarModulos();
+    cargarModulos();
+
+  }catch(e){
+    alert("Error al eliminar");
+    console.error(e);
+  }
 }
 
 /* ======================================================
-   CERRAR MODAL
+   UTIL – ESCAPE STRINGS PARA onclick
 ====================================================== */
-function cerrarModulo(){
-  modalModulo.style.display = "none";
+function escapeJS(text){
+  return String(text)
+    .replace(/\\/g,"\\\\")
+    .replace(/'/g,"\\'")
+    .replace(/"/g,'\\"')
+    .replace(/\n/g," ");
 }
-
