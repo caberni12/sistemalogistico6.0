@@ -22,7 +22,7 @@ function normalizarCodigo(v){
   return String(v ?? '').trim();
 }
 
-/* ===== FECHA PARA TABLA ===== */
+/* ===== FECHA PARA TABLA / TARJETA ===== */
 function formatFechaTabla(f){
   if(!f) return '';
   const d = new Date(f);
@@ -107,7 +107,7 @@ function setMovimiento(tipo){
 }
 
 /* =====================================================
-   AUTOCOMPLETE (MAESTRA)
+   AUTOCOMPLETE
 ===================================================== */
 function buscarCodigo(){
   clearTimeout(timerBuscar);
@@ -156,7 +156,7 @@ function selectProducto(c,d,stock){
 }
 
 /* =====================================================
-   LISTAR / TABLA
+   LISTAR / RENDER TABLA + TARJETAS
 ===================================================== */
 function cargar(){
   startProgress();
@@ -177,21 +177,27 @@ function cargar(){
 }
 
 function renderTabla(arr){
-  $('tabla').innerHTML = '';
-  $('cards').innerHTML = '';
+  const tbody = $('tabla');
+  const cards = $('cards');
+
+  tbody.innerHTML = '';
+  cards.innerHTML = '';
 
   if(!arr.length){
-    $('tabla').innerHTML = `
-      <tr><td colspan="11" style="text-align:center;padding:20px">
-        Sin registros
-      </td></tr>`;
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="11" style="text-align:center;padding:20px">
+          Sin registros
+        </td>
+      </tr>`;
     return;
   }
 
   arr.forEach(r=>{
-    $('tabla').innerHTML += `
+
+    /* ===== TABLA ESCRITORIO ===== */
+    tbody.innerHTML += `
       <tr>
-         
         <td>${r[5]}</td>
         <td>${r[6]}</td>
         <td>${r[4]}</td>
@@ -207,6 +213,34 @@ function renderTabla(arr){
           <button class="del" onclick='eliminar("${r[0]}",this)'>🗑️</button>
         </td>
       </tr>`;
+
+    /* ===== TARJETA MÓVIL ===== */
+    cards.innerHTML += `
+      <div class="card-item">
+
+        <div class="desc">${r[6]}</div>
+
+        <div class="card-row"><b>Código</b><span>${r[5]}</span></div>
+        <div class="card-row"><b>Ubicación</b><span>${r[4]}</span></div>
+        <div class="card-row"><b>Stock</b><span>${r[7]}</span></div>
+        <div class="card-row"><b>Responsable</b><span>${r[8]}</span></div>
+        <div class="card-row"><b>Origen</b><span>${r[10]}</span></div>
+
+        <div class="card-fechas">
+          <div>📥 ${formatFechaTabla(r[2])}</div>
+          <div>📤 ${formatFechaTabla(r[3])}</div>
+        </div>
+
+        <span class="badge ${r[9] === 'VIGENTE' ? 'vigente' : 'retirado'}">
+          ${r[9]}
+        </span>
+
+        <div class="card-actions">
+          <button class="edit" onclick='editar(${JSON.stringify(r)})'>✏️</button>
+          <button class="del" onclick='eliminar("${r[0]}",this)'>🗑️</button>
+        </div>
+
+      </div>`;
   });
 }
 
@@ -241,7 +275,7 @@ function eliminar(idFila, btn){
 }
 
 /* =====================================================
-   GUARDAR (ENTRADA / SALIDA)
+   GUARDAR
 ===================================================== */
 function guardar(){
   const btn = $('btnGuardar');
@@ -267,9 +301,7 @@ function guardar(){
       return;
     }
     nuevoStock -= mov;
-  }
-
-  if(TIPO_MOV === 'ENTRADA'){
+  }else{
     nuevoStock += mov;
   }
 
@@ -329,7 +361,7 @@ function limpiarFormulario(){
 }
 
 /* =====================================================
-   SCANNER + LINTERNA
+   SCANNER
 ===================================================== */
 let scanner = null;
 let torchOn = false;
@@ -373,64 +405,9 @@ function cerrarScanner(){
 }
 
 /* =====================================================
-   RECARGAR
+   RECARGAR / EXPORTES
 ===================================================== */
-function recargar(){
-  cargar();
-}
-
-/* =====================================================
-   EXPORTAR PDF
-===================================================== */
-function exportarPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('l','pt','a4');
-
-  const origen = DATA_FILTRADA.length ? DATA_FILTRADA : DATA;
-
-  doc.text('Reporte de Ubicaciones',40,40);
-  doc.autoTable({
-    startY:60,
-    head:[['Código','Descripción','Ubicación','Stock','Registro','Entrada','Salida','Responsable','Status','Origen']],
-    body:origen.map(r=>[
-      r[5],r[6],r[4],r[7],
-      formatFechaTabla(r[1]),
-      formatFechaTabla(r[2]),
-      formatFechaTabla(r[3]),
-      r[8],r[9],r[10]
-    ]),
-    styles:{fontSize:9},
-    headStyles:{fillColor:[20,184,166],textColor:255}
-  });
-
-  doc.save('ubicaciones.pdf');
-}
-
-/* =====================================================
-   EXPORTAR XLSX
-===================================================== */
-function exportarXLSX(){
-  const origen = DATA_FILTRADA.length ? DATA_FILTRADA : DATA;
-
-  const ws = XLSX.utils.json_to_sheet(
-    origen.map(r=>({
-      Codigo:r[5],
-      Descripcion:r[6],
-      Ubicacion:r[4],
-      Stock:r[7],
-      Registro:formatFechaTabla(r[1]),
-      Entrada:formatFechaTabla(r[2]),
-      Salida:formatFechaTabla(r[3]),
-      Responsable:r[8],
-      Status:r[9],
-      Origen:r[10]
-    }))
-  );
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Ubicaciones');
-  XLSX.writeFile(wb,'ubicaciones.xlsx');
-}
+function recargar(){ cargar(); }
 
 /* =====================================================
    INIT
