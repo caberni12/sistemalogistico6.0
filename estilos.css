@@ -360,6 +360,32 @@ tbody td:last-child{
 }
 
 /* =====================================================
+   AIRE Y RESPIRACIÓN AL SCANNER
+===================================================== */
+
+/* separa scanner del input código */
+#scannerBox{
+  margin-top: 18px;     /* aire arriba */
+  margin-bottom: 18px;  /* aire abajo */
+}
+
+/* aire entre botón escanear y scanner */
+button.scan{
+  margin-bottom: 12px;
+}
+
+/* aire entre scanner y linterna */
+#torchBtn{
+  margin-top: 10px;
+}
+
+/* mejora visual dentro del modal */
+.modal-body{
+  padding-bottom: 24px;
+}
+
+
+/* =====================================================
    RESPONSIVE
 ===================================================== */
 @media(max-width:768px){
