@@ -217,6 +217,7 @@ function renderTabla(arr){
     /* ===== TARJETA MÓVIL ===== */
     cards.innerHTML += `
       <div class="card-item">
+
         <div class="desc">${r[6]}</div>
 
         <div class="card-row"><b>Código</b><span>${r[5]}</span></div>
@@ -238,6 +239,7 @@ function renderTabla(arr){
           <button class="edit" onclick='editar(${JSON.stringify(r)})'>✏️</button>
           <button class="del" onclick='eliminar("${r[0]}",this)'>🗑️</button>
         </div>
+
       </div>`;
   });
 }
@@ -349,6 +351,60 @@ function filtrar(txt){
 }
 
 /* =====================================================
+   LIMPIAR
+===================================================== */
+function limpiarFormulario(){
+  document.querySelectorAll('#modal input, #modal select')
+    .forEach(i=>i.value='');
+  TIPO_MOV = null;
+  $('suggest').style.display='none';
+}
+
+/* =====================================================
+   SCANNER
+===================================================== */
+let scanner = null;
+let torchOn = false;
+
+function abrirScanner(){
+  if(!/android|iphone|ipad|mobile/i.test(navigator.userAgent)){
+    alert('Scanner solo disponible en móvil');
+    return;
+  }
+
+  $('scannerBox').style.display='block';
+  $('torchBtn').style.display='block';
+
+  scanner = new Html5Qrcode('scannerBox');
+  scanner.start(
+    {facingMode:{exact:'environment'}},
+    {fps:10,qrbox:220},
+    txt=>{
+      $('codigo').value = txt.trim();
+      cerrarScanner();
+      buscarCodigo();
+    }
+  );
+}
+
+function toggleTorch(){
+  if(!scanner) return;
+  torchOn = !torchOn;
+  scanner.applyVideoConstraints({advanced:[{torch:torchOn}]});
+  $('torchBtn').classList.toggle('active',torchOn);
+}
+
+function cerrarScanner(){
+  if(scanner){
+    scanner.stop().then(()=>scanner.clear()).catch(()=>{});
+    scanner = null;
+  }
+  $('scannerBox').style.display='none';
+  $('torchBtn').style.display='none';
+  torchOn = false;
+}
+
+/* =====================================================
    EXPORTAR PDF
 ===================================================== */
 function exportarPDF(){
@@ -403,52 +459,11 @@ function exportarXLSX(){
 }
 
 /* =====================================================
-   SCANNER
-===================================================== */
-let scanner = null;
-let torchOn = false;
-
-function abrirScanner(){
-  if(!/android|iphone|ipad|mobile/i.test(navigator.userAgent)){
-    alert('Scanner solo disponible en móvil');
-    return;
-  }
-
-  $('scannerBox').style.display='block';
-  $('torchBtn').style.display='block';
-
-  scanner = new Html5Qrcode('scannerBox');
-  scanner.start(
-    {facingMode:{exact:'environment'}},
-    {fps:10,qrbox:220},
-    txt=>{
-      $('codigo').value = txt.trim();
-      cerrarScanner();
-      buscarCodigo();
-    }
-  );
-}
-
-function toggleTorch(){
-  if(!scanner) return;
-  torchOn = !torchOn;
-  scanner.applyVideoConstraints({advanced:[{torch:torchOn}]});
-  $('torchBtn').classList.toggle('active',torchOn);
-}
-
-function cerrarScanner(){
-  if(scanner){
-    scanner.stop().then(()=>scanner.clear()).catch(()=>{});
-    scanner = null;
-  }
-  $('scannerBox').style.display='none';
-  $('torchBtn').style.display='none';
-  torchOn = false;
-}
-
-/* =====================================================
-   RECARGAR / INIT
+   RECARGAR / EXPORTES
 ===================================================== */
 function recargar(){ cargar(); }
 
+/* =====================================================
+   INIT
+===================================================== */
 document.addEventListener('DOMContentLoaded', cargar);
