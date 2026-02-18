@@ -294,16 +294,47 @@ tbody td:nth-child(2){
 }
 
 /* =====================================================
-   SCANNER
+   SCANNER – AIRE Y JERARQUÍA VISUAL
 ===================================================== */
+
+/* contenedor general del scanner */
 #scannerBox{
   width:100%;
-  height:240px;
+  height:260px;               /* un poco más alto */
+  margin:20px 0 14px;         /* aire arriba y abajo */
+  border-radius:22px;         /* más moderno */
   background:#000;
-  border-radius:18px;
-  margin:16px 0;
   overflow:hidden;
+  box-shadow:
+    0 12px 28px rgba(15,23,42,.25);
 }
+
+/* botón escanear */
+button.scan{
+  margin-top:16px;
+  margin-bottom:8px;
+}
+
+/* botón linterna separado */
+#torchBtn{
+  margin-top:12px;
+}
+
+/* grupo scanner dentro del modal */
+.modal-body #scannerBox{
+  padding:6px;               /* aire interno */
+  background:linear-gradient(
+    180deg,
+    #020617,
+    #000000
+  );
+}
+
+/* separación visual del autocomplete */
+#suggest{
+  margin-top:10px;
+}
+
 
 #torchBtn.active{
   background:linear-gradient(135deg,var(--success),#16a34a);
