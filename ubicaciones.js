@@ -2,13 +2,13 @@
    CONFIGURACIÓN
 ===================================================== */
 const URL_GS =
-  'https://script.google.com/macros/s/AKfycbz-_cZbe36eaQyopjw1HURuE4Zwbvuo4Lewsn0S393ocCLiQRbdouSUwpiAFOSwVzXwyA/exec';
+  'https://script.google.com/macros/s/AKfycbyRRSuT2TZURNw-09_n23MpxRsYsr6KBG2pJ9j9-pwMjWHgBy4fVBU99hEfa0ENxHeIXQ/exec';
 
 let DATA = [];
 let DATA_FILTRADA = [];
-
-const ES_MOBILE = /android|iphone|ipad|mobile/i.test(navigator.userAgent);
-let ORIGEN = ES_MOBILE ? 'MOBILE' : 'WEB';
+let ORIGEN = /android|iphone|ipad|mobile/i.test(navigator.userAgent)
+  ? 'MOBILE'
+  : 'WEB';
 
 let timerBuscar = null;
 let TIPO_MOV = null;
@@ -26,7 +26,7 @@ function normalizarCodigo(v){
 function formatFechaTabla(f){
   if(!f) return '';
   const d = new Date(f);
-  if(isNaN(d)) return f;
+  if(isNaN(d)) return '';
   const dd = String(d.getDate()).padStart(2,'0');
   const mm = String(d.getMonth()+1).padStart(2,'0');
   const yy = d.getFullYear();
@@ -40,10 +40,27 @@ function formatFechaInput(f){
   if(!f) return '';
   const d = new Date(f);
   if(isNaN(d)) return '';
-  const dd = String(d.getDate()).padStart(2,'0');
-  const mm = String(d.getMonth()+1).padStart(2,'0');
-  const yy = d.getFullYear();
-  return `${yy}-${mm}-${dd}`;
+  return d.toISOString().slice(0,10);
+}
+
+/* =====================================================
+   PROGRESS BAR
+===================================================== */
+function startProgress(){
+  const bar = $('progress-bar');
+  if(!bar) return;
+  bar.classList.add('active');
+  bar.style.width = '30%';
+}
+
+function endProgress(){
+  const bar = $('progress-bar');
+  if(!bar) return;
+  bar.style.width = '100%';
+  setTimeout(()=>{
+    bar.classList.remove('active');
+    bar.style.width = '0%';
+  },300);
 }
 
 /* =====================================================
@@ -71,10 +88,6 @@ function abrirModal(){
   limpiarFormulario();
   $('origen').value = ORIGEN;
   $('modal').classList.add('active');
-
-  setTimeout(()=>{
-    $('codigo')?.focus();
-  },300);
 }
 
 function cerrarModal(){
@@ -89,7 +102,8 @@ function setMovimiento(tipo){
   TIPO_MOV = tipo;
   $('btnEntrada').classList.remove('active');
   $('btnSalida').classList.remove('active');
-  $(tipo === 'ENTRADA' ? 'btnEntrada' : 'btnSalida').classList.add('active');
+  $(tipo === 'ENTRADA' ? 'btnEntrada' : 'btnSalida')
+    .classList.add('active');
 }
 
 /* =====================================================
@@ -104,7 +118,7 @@ function buscarCodigo(){
   if(!cod){
     $('descripcion').value = '';
     $('cantidad').value = '';
-    sug && (sug.style.display = 'none');
+    sug.style.display = 'none';
     return;
   }
 
@@ -115,52 +129,69 @@ function buscarCodigo(){
         if(d.ok){
           $('descripcion').value = d.descripcion;
           $('cantidad').value = Number(d.cantidad || 0);
-          if(sug){
-            sug.innerHTML = `
-              <div>
-                ${d.codigo} – ${d.descripcion}
-              </div>`;
-            sug.style.display = 'block';
-          }
+          sug.innerHTML = `
+            <div onclick="selectProducto('${d.codigo}','${d.descripcion}',${d.cantidad})">
+              ${d.codigo} – ${d.descripcion}
+            </div>`;
+          sug.style.display = 'block';
         }else{
           $('descripcion').value='';
           $('cantidad').value='';
-          sug && (sug.style.display='none');
+          sug.style.display='none';
         }
       })
       .catch(()=>{
         $('descripcion').value='';
         $('cantidad').value='';
-        sug && (sug.style.display='none');
+        sug.style.display='none';
       });
   },300);
+}
+
+function selectProducto(c,d,stock){
+  $('codigo').value = c;
+  $('descripcion').value = d;
+  $('cantidad').value = Number(stock || 0);
+  $('suggest').style.display = 'none';
 }
 
 /* =====================================================
    LISTAR / TABLA
 ===================================================== */
 function cargar(){
+  startProgress();
   fetch(`${URL_GS}?accion=listar`)
     .then(r=>r.json())
     .then(d=>{
       DATA = d.data || [];
       DATA_FILTRADA = DATA;
       renderTabla(DATA);
+      endProgress();
     })
     .catch(()=>{
       DATA = [];
       DATA_FILTRADA = [];
       renderTabla([]);
+      endProgress();
     });
 }
 
 function renderTabla(arr){
   $('tabla').innerHTML = '';
-  $('cards') && ($('cards').innerHTML = '');
+  $('cards').innerHTML = '';
+
+  if(!arr.length){
+    $('tabla').innerHTML = `
+      <tr><td colspan="11" style="text-align:center;padding:20px">
+        Sin registros
+      </td></tr>`;
+    return;
+  }
 
   arr.forEach(r=>{
     $('tabla').innerHTML += `
       <tr>
+         
         <td>${r[5]}</td>
         <td>${r[6]}</td>
         <td>${r[4]}</td>
@@ -171,9 +202,9 @@ function renderTabla(arr){
         <td>${r[8]}</td>
         <td>${r[9]}</td>
         <td>${r[10]}</td>
-        <td>
-          <button onclick='editar(${JSON.stringify(r)})'>✏️</button>
-          <button onclick='eliminar("${r[0]}",this)'>🗑️</button>
+        <td class="actions-td">
+          <button class="edit" onclick='editar(${JSON.stringify(r)})'>✏️</button>
+          <button class="del" onclick='eliminar("${r[0]}",this)'>🗑️</button>
         </td>
       </tr>`;
   });
@@ -232,14 +263,14 @@ function guardar(){
 
   if(TIPO_MOV === 'SALIDA'){
     if(mov > stockActual){
-      alert(`Stock insuficiente\nStock actual: ${stockActual}\nIntento retirar: ${mov}`);
+      alert(`Stock insuficiente\nStock: ${stockActual}\nSalida: ${mov}`);
       return;
     }
-    nuevoStock = stockActual - mov;
+    nuevoStock -= mov;
   }
 
   if(TIPO_MOV === 'ENTRADA'){
-    nuevoStock = stockActual + mov;
+    nuevoStock += mov;
   }
 
   startBtnLoader(btn);
@@ -281,7 +312,9 @@ function guardar(){
 ===================================================== */
 function filtrar(txt){
   txt = txt.toLowerCase();
-  DATA_FILTRADA = DATA.filter(r => r.join(' ').toLowerCase().includes(txt));
+  DATA_FILTRADA = DATA.filter(r =>
+    r.join(' ').toLowerCase().includes(txt)
+  );
   renderTabla(DATA_FILTRADA);
 }
 
@@ -289,25 +322,26 @@ function filtrar(txt){
    LIMPIAR
 ===================================================== */
 function limpiarFormulario(){
-  document.querySelectorAll('#modal input, #modal select').forEach(i=>i.value='');
+  document.querySelectorAll('#modal input, #modal select')
+    .forEach(i=>i.value='');
   TIPO_MOV = null;
-  $('suggest') && ($('suggest').style.display='none');
+  $('suggest').style.display='none';
 }
 
 /* =====================================================
-   SCANNER + LINTERNA (FIX MÓVIL)
+   SCANNER + LINTERNA
 ===================================================== */
 let scanner = null;
 let torchOn = false;
 
 function abrirScanner(){
-  if(!ES_MOBILE){
+  if(!/android|iphone|ipad|mobile/i.test(navigator.userAgent)){
     alert('Scanner solo disponible en móvil');
     return;
   }
 
   $('scannerBox').style.display='block';
-  $('torchBtn') && ($('torchBtn').style.display='block');
+  $('torchBtn').style.display='block';
 
   scanner = new Html5Qrcode('scannerBox');
   scanner.start(
@@ -317,7 +351,6 @@ function abrirScanner(){
       $('codigo').value = txt.trim();
       cerrarScanner();
       buscarCodigo();
-      setTimeout(()=> $('cantidad_mov')?.focus(),300);
     }
   );
 }
@@ -326,34 +359,80 @@ function toggleTorch(){
   if(!scanner) return;
   torchOn = !torchOn;
   scanner.applyVideoConstraints({advanced:[{torch:torchOn}]});
-  $('torchBtn')?.classList.toggle('active',torchOn);
+  $('torchBtn').classList.toggle('active',torchOn);
 }
 
 function cerrarScanner(){
   if(scanner){
-    scanner.stop().catch(()=>{}).finally(()=>{
-      scanner.clear();
-      scanner = null;
-    });
+    scanner.stop().then(()=>scanner.clear()).catch(()=>{});
+    scanner = null;
   }
   $('scannerBox').style.display='none';
-  $('torchBtn') && ($('torchBtn').style.display='none');
+  $('torchBtn').style.display='none';
   torchOn = false;
 }
 
 /* =====================================================
-   INIT (ACTIVACIÓN MÓVIL)
+   RECARGAR
 ===================================================== */
-document.addEventListener('DOMContentLoaded', ()=>{
+function recargar(){
   cargar();
+}
 
-  if(ES_MOBILE){
-    const btnScanner = $('btnScanner');
-    if(btnScanner){
-      btnScanner.addEventListener('pointerdown', e=>{
-        e.preventDefault();
-        abrirScanner();
-      });
-    }
-  }
-});
+/* =====================================================
+   EXPORTAR PDF
+===================================================== */
+function exportarPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l','pt','a4');
+
+  const origen = DATA_FILTRADA.length ? DATA_FILTRADA : DATA;
+
+  doc.text('Reporte de Ubicaciones',40,40);
+  doc.autoTable({
+    startY:60,
+    head:[['Código','Descripción','Ubicación','Stock','Registro','Entrada','Salida','Responsable','Status','Origen']],
+    body:origen.map(r=>[
+      r[5],r[6],r[4],r[7],
+      formatFechaTabla(r[1]),
+      formatFechaTabla(r[2]),
+      formatFechaTabla(r[3]),
+      r[8],r[9],r[10]
+    ]),
+    styles:{fontSize:9},
+    headStyles:{fillColor:[20,184,166],textColor:255}
+  });
+
+  doc.save('ubicaciones.pdf');
+}
+
+/* =====================================================
+   EXPORTAR XLSX
+===================================================== */
+function exportarXLSX(){
+  const origen = DATA_FILTRADA.length ? DATA_FILTRADA : DATA;
+
+  const ws = XLSX.utils.json_to_sheet(
+    origen.map(r=>({
+      Codigo:r[5],
+      Descripcion:r[6],
+      Ubicacion:r[4],
+      Stock:r[7],
+      Registro:formatFechaTabla(r[1]),
+      Entrada:formatFechaTabla(r[2]),
+      Salida:formatFechaTabla(r[3]),
+      Responsable:r[8],
+      Status:r[9],
+      Origen:r[10]
+    }))
+  );
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Ubicaciones');
+  XLSX.writeFile(wb,'ubicaciones.xlsx');
+}
+
+/* =====================================================
+   INIT
+===================================================== */
+document.addEventListener('DOMContentLoaded', cargar);
