@@ -4,201 +4,15 @@
 <meta charset="UTF-8">
 <title>Ubicaciones PRO</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <script src="https://unpkg.com/html5-qrcode"></script>
 
-<style>
-/* ================= RESET ================= */
-*{
-  box-sizing:border-box;
-  font-family:system-ui;
-}
-
-/* ================= BODY ================= */
-body{
-  margin:0;
-  background:#f4f6f8;
-  color:#0f172a;
-}
-
-/* ================= HEADER ================= */
-header{
-  background:#fff;
-  padding:16px;
-  font-size:18px;
-  font-weight:900;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  box-shadow:0 4px 14px rgba(0,0,0,.12);
-}
-
-header button{
-  background:#16a34a;
-  color:#fff;
-  border:none;
-  padding:10px 16px;
-  border-radius:14px;
-  font-weight:900;
-}
-
-/* ================= CARDS ================= */
-.card{
-  background:#fff;
-  margin:14px;
-  padding:16px;
-  border-radius:20px;
-  box-shadow:0 10px 26px rgba(0,0,0,.08);
-}
-
-/* ================= SEARCH ================= */
-.search{
-  width:100%;
-  padding:12px;
-  border-radius:14px;
-  border:2px solid #e5e7eb;
-}
-
-/* ================= TABLE ================= */
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-th,td{
-  padding:8px;
-  font-size:13px;
-}
-
-th{
-  color:#6b7280;
-  text-align:left;
-}
-
-.actions-td button{
-  border:none;
-  padding:6px 10px;
-  border-radius:10px;
-  font-weight:800;
-}
-
-.edit{background:#14b8a6;color:#fff}
-.del{background:#ef4444;color:#fff}
-
-/* ================= MODAL ================= */
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.45);
-  display:none;
-  justify-content:center;
-  align-items:center;
-  z-index:10;
-}
-
-.modal.active{display:flex}
-
-.modal-card{
-  background:#fff;
-  width:95%;
-  max-width:420px;
-  border-radius:22px;
-  overflow:hidden;
-}
-
-.modal-body{
-  padding:16px;
-  max-height:80vh;
-  overflow-y:auto;
-}
-
-.modal-footer{
-  padding:12px;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  border-top:1px solid #e5e7eb;
-}
-
-.modal-footer button{
-  border:none;
-  padding:14px;
-  border-radius:16px;
-  font-weight:900;
-}
-
-.modal-footer button:first-child{
-  background:#16a34a;
-  color:#fff;
-}
-
-.modal-footer button:last-child{
-  background:#e5e7eb;
-}
-
-/* ================= FORM ================= */
-label{
-  font-size:11px;
-  font-weight:800;
-  color:#6b7280;
-  margin-top:10px;
-  display:block;
-}
-
-input,select{
-  width:100%;
-  padding:10px;
-  border-radius:12px;
-  border:2px solid #e5e7eb;
-  margin-bottom:8px;
-}
-
-input[readonly]{
-  background:#f1f5f9;
-}
-
-/* ================= BOTONES ================= */
-.btn.scan{
-  width:100%;
-  margin-top:6px;
-  background:#0f766e;
-  color:#fff;
-  border:none;
-  padding:10px;
-  border-radius:14px;
-  font-weight:900;
-}
-
-#btnEntrada.active,
-#btnSalida.active{
-  background:#16a34a;
-}
-
-/* ================= SUGGEST ================= */
-.suggest{
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  display:none;
-}
-
-.suggest div{
-  padding:8px;
-  cursor:pointer;
-}
-
-.suggest div:hover{
-  background:#f1f5f9;
-}
-
-/* ================= MOBILE ================= */
-@media(max-width:768px){
-  table{display:none}
-}
-</style>
+<link rel="stylesheet" href="estilos.css">
 </head>
 
 <body>
+
+<!-- 🔥 NECESARIO PARA QUE NO SE ROMPA EL JS -->
+<div id="progress-bar"></div>
 
 <header>
   📍 Ubicaciones PRO
@@ -213,95 +27,75 @@ input[readonly]{
   <table>
     <thead>
       <tr>
-        <th>Código</th>
-        <th>Descripción</th>
-        <th>Ubicación</th>
-        <th>Cant.</th>
-        <th>Registro</th>
-        <th>Entrada</th>
-        <th>Salida</th>
-        <th>Resp.</th>
-        <th>Status</th>
-        <th>Origen</th>
-        <th></th>
+        <th>Código</th><th>Descripción</th><th>Ubicación</th><th>Cant.</th>
+        <th>Registro</th><th>Entrada</th><th>Salida</th>
+        <th>Resp.</th><th>Status</th><th>Origen</th><th></th>
       </tr>
     </thead>
     <tbody id="tabla"></tbody>
   </table>
+
+  <div id="cards" class="cards"></div>
 </div>
 
 <!-- ================= MODAL ================= -->
 <div class="modal" id="modal">
-  <div class="modal-card">
-    <div class="modal-body">
+<div class="modal-card">
+<div class="modal-body">
 
-      <input type="hidden" id="id">
+<input type="hidden" id="id">
 
-      <label>Fecha Entrada</label>
-      <input id="fecha_entrada" type="date">
+<label>Fecha Entrada</label>
+<input id="fecha_entrada" type="date">
 
-      <label>Fecha Salida</label>
-      <input id="fecha_salida" type="date">
+<label>Fecha Salida</label>
+<input id="fecha_salida" type="date">
 
-      <label>Ubicación</label>
-      <input id="ubicacion">
+<label>Ubicación</label>
+<input id="ubicacion">
 
-      <label>Código</label>
-      <input id="codigo" autocomplete="off" oninput="buscarCodigo()">
+<label>Código</label>
+<input id="codigo" autocomplete="off" oninput="buscarCodigo()">
 
-      <button class="btn scan" type="button" onclick="abrirScanner()">📷 Escanear</button>
+<button class="btn scan" type="button" onclick="abrirScanner()">📷 Escanear</button>
 
-      <div id="scannerBox" style="display:none;margin-top:10px;height:220px;border-radius:14px;overflow:hidden"></div>
+<div id="scannerBox" style="display:none;height:220px;border-radius:14px;overflow:hidden"></div>
 
-      <button class="btn scan" id="torchBtn" type="button"
-              onclick="toggleTorch()" style="display:none">🔦 Linterna</button>
+<button class="btn scan" id="torchBtn" type="button"
+        onclick="toggleTorch()" style="display:none">🔦 Linterna</button>
 
-      <div id="suggest" class="suggest"></div>
+<div id="suggest" class="suggest"></div>
 
-      <label>Descripción</label>
-      <input id="descripcion" readonly>
+<label>Descripción</label>
+<input id="descripcion" readonly>
 
-      <!-- ===== MOVIMIENTO ===== -->
-      <label>Tipo de Movimiento</label>
-      <div style="display:flex;gap:10px;margin-bottom:12px">
-        <button type="button" class="btn scan" id="btnEntrada"
-                onclick="setMovimiento('ENTRADA')">➕ Entrada</button>
-        <button type="button" class="btn scan" id="btnSalida"
-                onclick="setMovimiento('SALIDA')">➖ Salida</button>
-      </div>
+<label>Cantidad</label>
+<input id="cantidad" type="number">
 
-      <input type="hidden" id="tipo_movimiento">
+<label>Responsable</label>
+<input id="responsable">
 
-      <label>Cantidad Actual</label>
-      <input id="cantidad" readonly>
+<label>Status</label>
+<select id="status">
+  <option value="VIGENTE">VIGENTE</option>
+  <option value="RETIRADO">RETIRADO</option>
+</select>
 
-      <label id="lblMovimiento" style="display:none">Cantidad a mover</label>
-      <input id="cantidad_mov" type="number" min="1"
-             placeholder="Ingrese cantidad" style="display:none">
+<label>Origen</label>
+<input id="origen" readonly>
 
-      <label>Responsable</label>
-      <input id="responsable">
-
-      <label>Status</label>
-      <select id="status">
-        <option value="VIGENTE">VIGENTE</option>
-        <option value="RETIRADO">RETIRADO</option>
-      </select>
-
-      <label>Origen</label>
-      <input id="origen" readonly>
-
-    </div>
-
-    <div class="modal-footer">
-      <button onclick="guardar()">Guardar</button>
-      <button onclick="cerrarModal()">Cancelar</button>
-    </div>
-  </div>
 </div>
 
-<!-- TU JS -->
-<script src="ubicaciones.js"></script>
+<div class="modal-footer">
+  <!-- 🔥 ID NECESARIO -->
+  <button id="btnGuardar" onclick="guardar()">Guardar</button>
+  <button onclick="cerrarModal()">Cancelar</button>
+</div>
 
+</div>
+</div>
+
+<script src="ubicaciones.js"></script>
+<script src="segurity.js"></script>
 </body>
 </html>
