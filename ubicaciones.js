@@ -1,7 +1,7 @@
 /* =====================================================
    CONFIGURACIÓN
 ===================================================== */
-const URL_GS = 'https://script.google.com/macros/s/AKfycbwP-NHZUqboSXDPq8HcWEl1qseurNEym8D0jv__DgZG1N0xkEmAQOSrKmLvXrxRZACv1g/exec';
+const URL_GS = 'https://script.google.com/macros/s/AKfycbycGy55PJSg3wLg30zCy3gsUEXZTIVuPqFaCABTew4tlBOPS9Td3LgioVViB5RDFAcRqg/exec';
 
 let DATA = [];
 let ORIGEN = /android|iphone|ipad|mobile/i.test(navigator.userAgent)
