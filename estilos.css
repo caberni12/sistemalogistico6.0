@@ -400,3 +400,25 @@ button.scan{
     padding:16px;
   }
 }
+
+@media (max-width:767px){
+  html{
+    height:100%;
+  }
+  body{
+    height:100%;
+    overflow:hidden;
+  }
+
+  /* SOLO el contenido scrollea */
+  .card{
+    overflow:hidden;
+  }
+
+  .tab.active,
+  #captura{
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+}
+
