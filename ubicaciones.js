@@ -217,7 +217,6 @@ function renderTabla(arr){
     /* ===== TARJETA MÓVIL ===== */
     cards.innerHTML += `
       <div class="card-item">
-
         <div class="desc">${r[6]}</div>
 
         <div class="card-row"><b>Código</b><span>${r[5]}</span></div>
@@ -239,7 +238,6 @@ function renderTabla(arr){
           <button class="edit" onclick='editar(${JSON.stringify(r)})'>✏️</button>
           <button class="del" onclick='eliminar("${r[0]}",this)'>🗑️</button>
         </div>
-
       </div>`;
   });
 }
@@ -351,13 +349,57 @@ function filtrar(txt){
 }
 
 /* =====================================================
-   LIMPIAR
+   EXPORTAR PDF
 ===================================================== */
-function limpiarFormulario(){
-  document.querySelectorAll('#modal input, #modal select')
-    .forEach(i=>i.value='');
-  TIPO_MOV = null;
-  $('suggest').style.display='none';
+function exportarPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l','pt','a4');
+
+  const origen = DATA_FILTRADA.length ? DATA_FILTRADA : DATA;
+
+  doc.text('Reporte de Ubicaciones',40,40);
+
+  doc.autoTable({
+    startY:60,
+    head:[['Código','Descripción','Ubicación','Stock','Registro','Entrada','Salida','Responsable','Status','Origen']],
+    body:origen.map(r=>[
+      r[5], r[6], r[4], r[7],
+      formatFechaTabla(r[1]),
+      formatFechaTabla(r[2]),
+      formatFechaTabla(r[3]),
+      r[8], r[9], r[10]
+    ]),
+    styles:{ fontSize:9 },
+    headStyles:{ fillColor:[20,184,166], textColor:255 }
+  });
+
+  doc.save('ubicaciones.pdf');
+}
+
+/* =====================================================
+   EXPORTAR XLSX
+===================================================== */
+function exportarXLSX(){
+  const origen = DATA_FILTRADA.length ? DATA_FILTRADA : DATA;
+
+  const ws = XLSX.utils.json_to_sheet(
+    origen.map(r=>({
+      Codigo:r[5],
+      Descripcion:r[6],
+      Ubicacion:r[4],
+      Stock:r[7],
+      Registro:formatFechaTabla(r[1]),
+      Entrada:formatFechaTabla(r[2]),
+      Salida:formatFechaTabla(r[3]),
+      Responsable:r[8],
+      Status:r[9],
+      Origen:r[10]
+    }))
+  );
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Ubicaciones');
+  XLSX.writeFile(wb,'ubicaciones.xlsx');
 }
 
 /* =====================================================
@@ -405,11 +447,8 @@ function cerrarScanner(){
 }
 
 /* =====================================================
-   RECARGAR / EXPORTES
+   RECARGAR / INIT
 ===================================================== */
 function recargar(){ cargar(); }
 
-/* =====================================================
-   INIT
-===================================================== */
 document.addEventListener('DOMContentLoaded', cargar);
