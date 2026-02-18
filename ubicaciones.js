@@ -20,8 +20,11 @@ function formatFecha(f){
   const d = new Date(f);
   if(isNaN(d)) return f;
   return d.toLocaleString('es-CL',{
-    day:'2-digit', month:'short', year:'numeric',
-    hour:'2-digit', minute:'2-digit'
+    day:'2-digit',
+    month:'short',
+    year:'numeric',
+    hour:'2-digit',
+    minute:'2-digit'
   });
 }
 
@@ -40,64 +43,21 @@ function cerrarModal(){
 }
 
 /* =====================================================
-   AUTOCOMPLETE CÓDIGO
-===================================================== */
-let timerBuscar = null;
-
-function buscarCodigo(){
-  clearTimeout(timerBuscar);
-
-  const cod = normalizarCodigo(document.getElementById('codigo').value);
-  const desc = document.getElementById('descripcion');
-  const sug  = document.getElementById('suggest');
-
-  if(!cod){
-    desc.value='';
-    sug.style.display='none';
-    return;
-  }
-
-  timerBuscar = setTimeout(()=>{
-    fetch(`${URL_GS}?codigo=${encodeURIComponent(cod)}`)
-      .then(r=>r.json())
-      .then(d=>{
-        if(d && d.descripcion){
-          desc.value = d.descripcion;
-          sug.innerHTML = `
-            <div onclick="selectProducto('${cod}','${d.descripcion}')">
-              ${cod} – ${d.descripcion}
-            </div>`;
-          sug.style.display='block';
-        }else{
-          desc.value='';
-          sug.style.display='none';
-        }
-      })
-      .catch(()=>{
-        desc.value='';
-        sug.style.display='none';
-      });
-  },300);
-}
-
-function selectProducto(c,d){
-  document.getElementById('codigo').value = c;
-  document.getElementById('descripcion').value = d;
-  document.getElementById('suggest').style.display='none';
-}
-
-/* =====================================================
-   CARGAR DATOS  (🔥 CLAVE)
+   CARGAR DATOS (🔥 AQUÍ ESTABA EL ERROR)
 ===================================================== */
 function cargar(){
   fetch(URL_GS)
     .then(r => r.json())
     .then(d => {
 
-      console.log('DATA URL:', d); // DEBUG
+      console.log('RESPUESTA REAL:', d); // 👈 DEBUG
 
-      // SOPORTA ARRAY DIRECTO O {data:[]}
-      DATA = Array.isArray(d) ? d : (d.data || []);
+      if(!Array.isArray(d)){
+        console.error('La URL no devuelve un array');
+        DATA = [];
+      }else{
+        DATA = d;
+      }
 
       renderTabla(DATA);
     })
@@ -118,16 +78,16 @@ function renderTabla(arr){
   arr.forEach(r=>{
     t.innerHTML += `
       <tr>
-        <td>${r[5] ?? ''}</td>
-        <td>${r[6] ?? ''}</td>
-        <td>${r[4] ?? ''}</td>
-        <td>${r[7] ?? ''}</td>
+        <td>${r[5] || ''}</td>
+        <td>${r[6] || ''}</td>
+        <td>${r[4] || ''}</td>
+        <td>${r[7] || ''}</td>
         <td>${formatFecha(r[1])}</td>
         <td>${formatFecha(r[2])}</td>
         <td>${formatFecha(r[3])}</td>
-        <td>${r[8] ?? ''}</td>
-        <td>${r[9] ?? ''}</td>
-        <td>${r[10] ?? ''}</td>
+        <td>${r[8] || ''}</td>
+        <td>${r[9] || ''}</td>
+        <td>${r[10] || ''}</td>
         <td class="actions-td">
           <button class="edit" onclick='editar(${JSON.stringify(r)})'>✏️</button>
           <button class="del" onclick='eliminar("${r[0]}")'>🗑️</button>
@@ -152,16 +112,16 @@ function editar(r){
   document.getElementById('ubicacion').value   = r[4];
   document.getElementById('codigo').value      = r[5];
   document.getElementById('descripcion').value = r[6];
-  document.getElementById('cantidad').value    = CANTIDAD_BASE;
+
+  document.getElementById('cantidad').value = CANTIDAD_BASE;
   document.getElementById('responsable').value = r[8];
   document.getElementById('status').value      = r[9];
   document.getElementById('origen').value      = r[10];
 
-  // reset movimiento
-  document.getElementById('tipo_movimiento').value='';
-  document.getElementById('cantidad_mov').value='';
-  document.getElementById('cantidad_mov').style.display='none';
-  document.getElementById('lblMovimiento').style.display='none';
+  document.getElementById('tipo_movimiento').value = '';
+  document.getElementById('cantidad_mov').value = '';
+  document.getElementById('cantidad_mov').style.display = 'none';
+  document.getElementById('lblMovimiento').style.display = 'none';
   document.getElementById('btnEntrada').classList.remove('active');
   document.getElementById('btnSalida').classList.remove('active');
 }
@@ -173,13 +133,13 @@ function setMovimiento(tipo){
   document.getElementById('tipo_movimiento').value = tipo;
   document.getElementById('btnEntrada').classList.toggle('active', tipo==='ENTRADA');
   document.getElementById('btnSalida').classList.toggle('active', tipo==='SALIDA');
-  document.getElementById('lblMovimiento').style.display='block';
-  document.getElementById('cantidad_mov').style.display='block';
+  document.getElementById('lblMovimiento').style.display = 'block';
+  document.getElementById('cantidad_mov').style.display = 'block';
   document.getElementById('cantidad_mov').focus();
 }
 
 /* =====================================================
-   GUARDAR
+   GUARDAR (ENVÍA CANTIDAD FINAL)
 ===================================================== */
 function guardar(){
 
@@ -187,12 +147,13 @@ function guardar(){
   const mov  = Number(document.getElementById('cantidad_mov').value || 0);
 
   if(!tipo) return alert('Seleccione ENTRADA o SALIDA');
-  if(mov<=0) return alert('Cantidad inválida');
+  if(mov <= 0) return alert('Cantidad inválida');
 
   let cantidadFinal = CANTIDAD_BASE;
-  if(tipo==='ENTRADA') cantidadFinal += mov;
-  if(tipo==='SALIDA')  cantidadFinal -= mov;
-  if(cantidadFinal<0)  return alert('Stock insuficiente');
+  if(tipo === 'ENTRADA') cantidadFinal += mov;
+  if(tipo === 'SALIDA')  cantidadFinal -= mov;
+
+  if(cantidadFinal < 0) return alert('Stock insuficiente');
 
   fetch(URL_GS,{
     method:'POST',
@@ -209,7 +170,8 @@ function guardar(){
    ELIMINAR
 ===================================================== */
 function eliminar(id){
-  if(!confirm('¿Eliminar registro?')) return;
+  if(!confirm('¿Eliminar este registro?')) return;
+
   fetch(URL_GS,{
     method:'POST',
     body:JSON.stringify({ eliminar:id })
@@ -232,36 +194,6 @@ function limpiarFormulario(){
     .forEach(i=>i.value='');
   const s = document.getElementById('suggest');
   if(s) s.style.display='none';
-}
-
-/* =====================================================
-   SCANNER
-===================================================== */
-let scanner=null;
-
-function abrirScanner(){
-  if(!/android|iphone|ipad|mobile/i.test(navigator.userAgent))
-    return alert('Scanner solo móvil');
-
-  document.getElementById('scannerBox').style.display='block';
-  scanner = new Html5Qrcode('scannerBox');
-  scanner.start(
-    { facingMode:{exact:'environment'} },
-    { fps:10, qrbox:220 },
-    txt=>{
-      document.getElementById('codigo').value = txt.trim();
-      cerrarScanner();
-      buscarCodigo();
-    }
-  );
-}
-
-function cerrarScanner(){
-  if(scanner){
-    scanner.stop().then(()=>scanner.clear()).catch(()=>{});
-    scanner=null;
-  }
-  document.getElementById('scannerBox').style.display='none';
 }
 
 /* =====================================================
