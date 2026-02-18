@@ -8,7 +8,7 @@
    const API = "https://script.google.com/macros/s/AKfycbzC_qrSyXeTw9NcO40ap4x2cfs3FZIBKqMZLV9kKhYYh7n2XTPAuj1Vb2ckpFBWi8Ys/exec";
    
    // SOLO GUARDAR CAPTURAS (CAMBIA ESTA URL SI ES NECESARIO)
-   const API_GUARDAR = "https://script.google.com/macros/s/AKfycbycGy55PJSg3wLg30zCy3gsUEXZTIVuPqFaCABTew4tlBOPS9Td3LgioVViB5RDFAcRqg/exec";
+   const API_GUARDAR = "https://script.google.com/macros/s/AKfycbz-_cZbe36eaQyopjw1HURuE4Zwbvuo4Lewsn0S393ocCLiQRbdouSUwpiAFOSwVzXwyA/exec";
 let productos = [];
 let capturas = JSON.parse(localStorage.getItem("capturas") || "[]");
 
