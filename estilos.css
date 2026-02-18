@@ -377,3 +377,81 @@ tbody td:nth-child(7){
   }
 }
 
+/* =====================================================
+   RESPONSIVE – ESCRITORIO ANCHO REAL
+===================================================== */
+
+/* ESCRITORIO */
+@media (min-width: 768px){
+
+  body{
+    padding:0 18px; /* aire general */
+  }
+
+  .card{
+    width:100%;
+    max-width:none;           /* elimina marco angosto */
+    margin:22px auto;
+    padding:24px 32px;        /* aire lateral real */
+  }
+
+  .table-wrap{
+    width:100%;
+    overflow-x:auto;
+  }
+
+  table{
+    width:100%;
+    min-width:1200px;         /* evita tabla apretada */
+    font-size:15px;
+  }
+
+  thead th{
+    padding:18px 22px;
+  }
+
+  tbody td{
+    padding:22px 22px;
+    font-size:14px;
+    line-height:1.8;
+  }
+
+  /* columna descripción realmente ancha */
+  thead th:nth-child(2),
+  tbody td:nth-child(2){
+    min-width:680px;
+    max-width:none;
+  }
+
+  /* fechas limpias */
+  tbody td:nth-child(5),
+  tbody td:nth-child(6),
+  tbody td:nth-child(7){
+    white-space:nowrap;
+    text-align:center;
+    font-size:13px;
+  }
+
+  /* scanner respira en desktop */
+  #scannerBox{
+    height:320px;
+    margin:26px 0 18px;
+  }
+}
+
+/* MONITORES GRANDES */
+@media (min-width:1600px){
+  .card{
+    max-width:1700px;         /* límite elegante */
+  }
+}
+
+/* MÓVIL */
+@media (max-width:768px){
+  table{display:none}
+  .cards{
+    display:grid;
+    gap:14px;
+  }
+}
+
