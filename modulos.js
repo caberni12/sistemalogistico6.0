@@ -1,5 +1,5 @@
 /* ======================================================
-   MODULOS.JS – CRUD MÓDULOS (WEB + MÓVIL)
+   MODULOS.JS – CRUD POR ID (MODAL + TABLA + TARJETAS MÓVIL)
 ====================================================== */
 
 /* ================= CONFIG ================= */
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ======================================================
-   MODALES
+   ABRIR / CERRAR MODALES
 ====================================================== */
 function abrirCrearModulo(){
   MODO_MODULO = "crear";
@@ -77,14 +77,14 @@ async function cargarModulos(){
     renderModulos();
 
   }catch(e){
-    console.error(e);
     tablaModulos.innerHTML =
       `<tr><td colspan="5">Error al cargar</td></tr>`;
+    console.error(e);
   }
 }
 
 /* ======================================================
-   RENDER TABLA + TARJETAS MÓVIL
+   RENDER TABLA (WEB) + TARJETAS (MÓVIL)
 ====================================================== */
 function renderModulos(){
 
@@ -103,34 +103,27 @@ function renderModulos(){
 
   MODULOS.forEach(m => {
 
-    const id      = m[0];
-    const nombre  = m[1];
-    const archivo = m[2];
-    const icono   = m[3];
-    const permiso = m[4];
-    const activo  = m[5];
-
-    /* ===== TABLA ===== */
+    /* ===== TABLA WEB ===== */
     tablaModulos.innerHTML += `
       <tr>
-        <td>${nombre}</td>
-        <td>${archivo}</td>
-        <td>${permiso}</td>
-        <td>${activo}</td>
+        <td>${m[1]}</td>
+        <td>${m[2]}</td>
+        <td>${m[4]}</td>
+        <td>${m[5]}</td>
         <td>
           <button class="btn-edit"
             onclick="editarModulo(
-              ${id},
-              '${escapeJS(nombre)}',
-              '${escapeJS(archivo)}',
-              '${escapeJS(icono)}',
-              '${escapeJS(permiso)}',
-              '${activo}'
+              ${m[0]},
+              '${escapeJS(m[1])}',
+              '${escapeJS(m[2])}',
+              '${escapeJS(m[3])}',
+              '${escapeJS(m[4])}',
+              '${m[5]}'
             )">
             Editar
           </button>
           <button class="btn-danger"
-            onclick="eliminarModulo(${id})">
+            onclick="eliminarModulo(${m[0]})">
             Eliminar
           </button>
         </td>
@@ -140,28 +133,29 @@ function renderModulos(){
     /* ===== TARJETA MÓVIL ===== */
     cards.innerHTML += `
       <div class="modulo-card">
-        <span class="modulo-badge ${activo==='SI'?'activo':'inactivo'}">
-          ${activo}
+        <span class="modulo-badge ${m[5]==='SI'?'activo':'inactivo'}">
+          ${m[5]}
         </span>
 
-        <h4>${icono || "📦"} ${nombre}</h4>
-        <p><b>Archivo:</b> ${archivo}</p>
-        <p><b>Permiso:</b> ${permiso}</p>
+        <h4>${m[3] || "📦"} ${m[1]}</h4>
+
+        <p><b>Archivo:</b> ${m[2]}</p>
+        <p><b>Permiso:</b> ${m[4]}</p>
 
         <div class="modulo-actions">
           <button class="btn-edit"
             onclick="editarModulo(
-              ${id},
-              '${escapeJS(nombre)}',
-              '${escapeJS(archivo)}',
-              '${escapeJS(icono)}',
-              '${escapeJS(permiso)}',
-              '${activo}'
+              ${m[0]},
+              '${escapeJS(m[1])}',
+              '${escapeJS(m[2])}',
+              '${escapeJS(m[3])}',
+              '${escapeJS(m[4])}',
+              '${m[5]}'
             )">
             Editar
           </button>
           <button class="btn-danger"
-            onclick="eliminarModulo(${id})">
+            onclick="eliminarModulo(${m[0]})">
             Eliminar
           </button>
         </div>
@@ -206,8 +200,8 @@ async function guardarModulo(){
 
   const payload = {
     action : MODO_MODULO === "editar"
-      ? "editarModulo"
-      : "crearModulo",
+              ? "editarModulo"
+              : "crearModulo",
     id      : MODULO_ID,
     nombre  : m_nombre.value.trim(),
     archivo : m_archivo.value.trim(),
@@ -223,17 +217,17 @@ async function guardarModulo(){
 
   try{
     await fetch(API_MODULOS,{
-      method:"POST",
-      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
-      body:JSON.stringify(payload)
+      method  : "POST",
+      headers : { "Content-Type":"text/plain" },
+      body    : JSON.stringify(payload)
     });
 
     cerrarModulo();
     cargarModulos();
 
   }catch(e){
+    alert("Error al guardar");
     console.error(e);
-    alert("Error al guardar módulo");
   }
 }
 
@@ -246,9 +240,9 @@ async function eliminarModulo(id){
 
   try{
     await fetch(API_MODULOS,{
-      method:"POST",
-      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
-      body:JSON.stringify({
+      method  : "POST",
+      headers : { "Content-Type":"text/plain" },
+      body    : JSON.stringify({
         action:"eliminarModulo",
         id
       })
@@ -257,13 +251,13 @@ async function eliminarModulo(id){
     cargarModulos();
 
   }catch(e){
+    alert("Error al eliminar");
     console.error(e);
-    alert("Error al eliminar módulo");
   }
 }
 
 /* ======================================================
-   UTIL – ESCAPE PARA onclick
+   UTIL – ESCAPE STRINGS PARA onclick
 ====================================================== */
 function escapeJS(text){
   return String(text)
