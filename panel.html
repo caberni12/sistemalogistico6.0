@@ -5,37 +5,51 @@
 <title>Panel Administrativo</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- ================= ESTILOS ================= -->
 <style>
-*{ box-sizing:border-box }
+/* ======================================================
+   BASE
+====================================================== */
+*{
+  box-sizing:border-box;
+}
+
 body{
   margin:0;
   font-family:'Segoe UI',Arial;
   background:#f4f7fb;
 }
+
 .container{
   max-width:1400px;
   margin:auto;
   padding:20px;
 }
+
 .card{
   background:#fff;
   border-radius:18px;
   padding:22px;
   box-shadow:0 15px 35px rgba(0,0,0,.08);
 }
+
+/* ======================================================
+   CONTROLES
+====================================================== */
 .controls{
   display:flex;
   gap:10px;
   flex-wrap:wrap;
   margin-bottom:20px;
 }
+
 .controls input{
   padding:10px;
   border-radius:8px;
   border:1px solid #ddd;
   width:260px;
+  max-width:100%;
 }
+
 button{
   border:none;
   border-radius:10px;
@@ -43,19 +57,50 @@ button{
   cursor:pointer;
   font-size:14px;
 }
-.btn-primary{ background:#3b82f6; color:#fff }
-.btn-success{ background:#10b981; color:#fff }
-.btn-edit{ background:#6366f1; color:#fff; padding:6px 12px }
-.btn-danger{ background:#ef4444; color:#fff; padding:6px 12px }
 
+.btn-primary{ background:#3b82f6; color:#fff; }
+.btn-success{ background:#10b981; color:#fff; }
+.btn-edit{ background:#6366f1; color:#fff; padding:6px 12px; }
+.btn-danger{ background:#ef4444; color:#fff; padding:6px 12px; }
+
+/* ======================================================
+   LOADER
+====================================================== */
+.loader{
+  width:16px;
+  height:16px;
+  border:3px solid rgba(255,255,255,.4);
+  border-top:3px solid #fff;
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+
+@keyframes spin{
+  to{ transform:rotate(360deg) }
+}
+
+.loading{
+  pointer-events:none;
+  opacity:.8;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  justify-content:center;
+}
+
+/* ======================================================
+   TABLA WEB
+====================================================== */
 table{
   width:100%;
   border-collapse:collapse;
 }
+
 th{
   background:#f1f5f9;
   padding:12px;
 }
+
 td{
   padding:10px;
   border-bottom:1px solid #eee;
@@ -63,6 +108,9 @@ td{
   text-align:center;
 }
 
+/* ======================================================
+   MODALES (GENERAL)
+====================================================== */
 .modal{
   position:fixed;
   inset:0;
@@ -72,6 +120,7 @@ td{
   justify-content:center;
   z-index:1000;
 }
+
 .modal-content{
   background:#fff;
   width:520px;
@@ -81,6 +130,7 @@ td{
   padding:20px;
   border-radius:16px;
 }
+
 input,select{
   width:100%;
   padding:10px;
@@ -101,7 +151,174 @@ input,select{
   gap:10px;
   margin-top:16px;
 }
-.footer-btns button{ flex:1 }
+
+.footer-btns button{
+  flex:1;
+}
+
+/* ======================================================
+   MOBILE GENERAL
+====================================================== */
+.mobile-list{
+  display:none;
+}
+
+@media(max-width:768px){
+
+  /* Oculta tabla principal */
+  .card > table,
+  .card > table thead{
+    display:none;
+  }
+
+  .controls input{
+    width:100%;
+  }
+
+  .mobile-list{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  .mobile-card{
+    background:#fff;
+    border-radius:16px;
+    padding:16px;
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+    border:1px solid #e5e7eb;
+  }
+
+  .mobile-card h4{
+    margin:0 0 6px;
+    font-size:15px;
+  }
+
+  .mobile-card p{
+    margin:4px 0;
+    font-size:13px;
+    color:#475569;
+  }
+
+  .mobile-actions{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+  }
+
+  .mobile-actions button{
+    flex:1;
+  }
+}
+
+/* ======================================================
+   MODAL MÓDULOS – ESTILO FINAL MÓVIL
+====================================================== */
+@media (max-width:768px){
+
+  #modalListaModulos{
+    align-items:flex-end;
+  }
+
+  #modalListaModulos .modal-content{
+    width:100%;
+    max-height:92dvh;
+    border-radius:22px 22px 0 0;
+    padding:18px 16px 22px;
+    animation:slideUp .3s ease;
+  }
+
+  @keyframes slideUp{
+    from{ transform:translateY(40px); opacity:0 }
+    to{ transform:translateY(0); opacity:1 }
+  }
+
+  /* Oculta tabla SOLO en modal módulos */
+  #modalListaModulos table{
+    display:none !important;
+  }
+
+  /* Contenedor tarjetas */
+  #modulosCards{
+    display:flex !important;
+    flex-direction:column;
+    gap:16px;
+    margin-top:12px;
+  }
+
+  /* Tarjeta módulo */
+  .modulo-card{
+    position:relative;
+    background:#fff;
+    border-radius:18px;
+    padding:16px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 10px 22px rgba(0,0,0,.08);
+  }
+
+  .modulo-card h4{
+    margin:0 0 6px;
+    font-size:16px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#0f172a;
+  }
+
+  .modulo-card p{
+    margin:4px 0;
+    font-size:13px;
+    color:#475569;
+    line-height:1.4;
+  }
+
+  /* Badge estado */
+  .modulo-badge{
+    position:absolute;
+    top:12px;
+    right:12px;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:600;
+    color:#fff;
+  }
+
+  .modulo-badge.activo{ background:#10b981; }
+  .modulo-badge.inactivo{ background:#ef4444; }
+
+  /* Acciones */
+  .modulo-actions{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+  }
+
+  .modulo-actions button{
+    flex:1;
+    padding:12px;
+    border-radius:14px;
+    font-size:13px;
+  }
+}
+
+/* ======================================================
+   OCULTAR VERSION MOVIL EN ESCRITORIO
+====================================================== */
+@media (min-width:769px){
+
+  /* Oculta tarjetas móviles */
+  #modulosCards{
+    display:none !important;
+  }
+
+  /* Asegura tabla visible en escritorio */
+  #modalListaModulos table{
+    display:table !important;
+  }
+}
+
 </style>
 </head>
 
@@ -115,11 +332,15 @@ input,select{
       <button id="btnLoad" class="btn-primary" onclick="cargarUsuarios()">Cargar usuarios</button>
       <input id="busqueda" placeholder="Buscar usuario, nombre o rol" oninput="filtrar()">
       <button class="btn-success" onclick="abrirCrear()">+ Crear Usuario</button>
+
       <button class="btn-primary" onclick="abrirCrearModulo()">+ Crear Módulo</button>
-      <button class="btn-primary" onclick="abrirListaModulos()">Ver Módulos</button>
+      <button class="btn-primary" onclick="abrirListaModulos()"> Ver Módulos
+      </button>
+
+
     </div>
 
-    <!-- TABLA USUARIOS -->
+    <!-- TABLA WEB -->
     <table>
       <thead>
         <tr>
@@ -163,11 +384,16 @@ input,select{
     </select>
 
     <h4>Permisos</h4>
-    <!-- 🔑 CONTENEDOR DINÁMICO -->
-    <div class="permissions" id="permissionsContainer">
-      <p style="grid-column:1/-1;text-align:center;color:#64748b">
-        Cargando permisos…
-      </p>
+    <div class="permissions">
+      <label><input type="checkbox" value="inventario"> Inventario</label>
+      <label><input type="checkbox" value="etiquetas"> Etiquetas</label>
+      <label><input type="checkbox" value="codigos"> Códigos</label>
+      <label><input type="checkbox" value="dashboard"> Dashboard</label>
+      <label><input type="checkbox" value="usuarios"> Usuarios</label>
+<label><input type="checkbox" value="ubicaciones"> Ubicaciones</label>
+<label><input type="checkbox" value="stock"> Ingreso de Productos</label>
+
+
     </div>
 
     <div class="footer-btns">
@@ -177,12 +403,12 @@ input,select{
   </div>
 </div>
 
-<!-- ================= MODAL LISTA MÓDULOS ================= -->
+<!-- ================= MODAL LISTA MODULOS ================= -->
 <div class="modal" id="modalListaModulos">
   <div class="modal-content">
     <h3>Módulos del Sistema</h3>
 
-    <table>
+    <table style="width:100%;border-collapse:collapse">
       <thead>
         <tr>
           <th>Nombre</th>
@@ -197,7 +423,8 @@ input,select{
       </tbody>
     </table>
 
-    <div id="modulosCards"></div>
+<div id="modulosCards" class="modulos-cards"></div>
+
 
     <div class="footer-btns">
       <button class="btn-danger" onclick="cerrarListaModulos()">Cerrar</button>
@@ -205,10 +432,11 @@ input,select{
   </div>
 </div>
 
+
 <!-- ================= MODAL MÓDULO ================= -->
 <div class="modal" id="modalModulo">
   <div class="modal-content">
-    <h3>Crear / Editar Módulo</h3>
+    <h3>Crear Módulo</h3>
 
     <input id="m_nombre" placeholder="Nombre del módulo">
     <input id="m_archivo" placeholder="Archivo HTML (ej: index2.html)">
@@ -227,9 +455,199 @@ input,select{
   </div>
 </div>
 
-<!-- ================= SCRIPTS ================= -->
+<script>
+  /* ================= CONFIG ================= */
+  const API = "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
+
+  let usuarios = [];
+  let modo = "crear";
+  let SESSION = null;
+
+  /* ================= SESIÓN ================= */
+  (async()=>{
+    const token = localStorage.getItem("token");
+    if(!token){
+      location.href="index.html";
+      return;
+    }
+
+    try{
+      const r = await fetch(`${API}?action=verify&token=${token}`);
+      const res = await r.json();
+
+      if(!res.valid || res.data.rol !== "ADMIN"){
+        localStorage.clear();
+        location.href="index.html";
+        return;
+      }
+
+      SESSION = res.data;
+
+    }catch(e){
+      console.error(e);
+      location.href="index.html";
+    }
+  })();
+
+  /* ================= CARGAR ================= */
+  async function cargarUsuarios(){
+    btnLoad.classList.add("loading");
+    btnLoad.innerHTML = `<div class="loader"></div> Cargando`;
+
+    const r = await fetch(API,{
+      method:"POST",
+      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+      body:JSON.stringify({
+        action:"listarUsuarios",
+        token: localStorage.getItem("token")
+      })
+    });
+
+    const res = await r.json();
+    usuarios = res.data || [];
+    render(usuarios);
+
+    btnLoad.classList.remove("loading");
+    btnLoad.innerHTML = "Cargar usuarios";
+  }
+
+  /* ================= RENDER ================= */
+  function render(data){
+    tablaUsuarios.innerHTML="";
+    mobileList.innerHTML="";
+
+    data.forEach(u=>{
+      tablaUsuarios.innerHTML += `
+        <tr>
+          <td>${u[1]}</td>
+          <td>${u[2]}</td>
+          <td>${u[3]}</td>
+          <td>${u[4]}</td>
+          <td>${u[5]}</td>
+          <td>
+            <button class="btn-edit"
+              onclick="editar('${u[1]}','${u[2]}','${u[3]}','${u[4]}','${u[5]}','${u[6]||""}')">
+              Editar
+            </button>
+            <button class="btn-danger" onclick="eliminarUsuario('${u[1]}')">
+              Eliminar
+            </button>
+          </td>
+        </tr>`;
+
+      mobileList.innerHTML += `
+        <div class="mobile-card">
+          <h4>${u[3]}</h4>
+          <p><b>Usuario:</b> ${u[1]}</p>
+          <p><b>Contraseña:</b> ${u[2]}</p>
+          <p><b>Rol:</b> ${u[4]}</p>
+          <div class="mobile-actions">
+            <button class="btn-edit"
+              onclick="editar('${u[1]}','${u[2]}','${u[3]}','${u[4]}','${u[5]}','${u[6]||""}')">
+              Editar
+            </button>
+            <button class="btn-danger" onclick="eliminarUsuario('${u[1]}')">
+              Eliminar
+            </button>
+          </div>
+        </div>`;
+    });
+  }
+
+  /* ================= FILTRO ================= */
+  function filtrar(){
+    const q = busqueda.value.toLowerCase();
+    render(usuarios.filter(u =>
+      u[1].toLowerCase().includes(q) ||
+      u[3].toLowerCase().includes(q) ||
+      u[4].toLowerCase().includes(q)
+    ));
+  }
+
+  /* ================= USUARIOS ================= */
+  function abrirCrear(){
+    modo = "crear";
+    tituloUsuario.innerText = "Crear Usuario";
+    u_user.disabled = false;
+    limpiar();
+    modalUsuario.style.display="flex";
+  }
+
+  function editar(u,p,n,r,a,per){
+    modo = "editar";
+    tituloUsuario.innerText = "Editar Usuario";
+    u_user.value = u;
+    u_user.disabled = true;
+    u_pass.value = p;
+    u_nombre.value = n;
+    u_rol.value = r;
+    u_activo.value = a;
+    document.querySelectorAll(".permissions input")
+      .forEach(c => c.checked = (per || "").includes(c.value));
+    modalUsuario.style.display="flex";
+  }
+
+  function cerrarUsuario(){
+    modalUsuario.style.display="none";
+  }
+
+  function limpiar(){
+    u_user.value="";
+    u_pass.value="";
+    u_nombre.value="";
+    u_rol.value="ADMIN";
+    u_activo.value="SI";
+    document.querySelectorAll(".permissions input").forEach(c=>c.checked=false);
+  }
+
+  async function guardarUsuario(){
+    btnGuardar.classList.add("loading");
+    btnGuardar.innerHTML = `<div class="loader"></div> Guardando`;
+
+    const permisos = [...document.querySelectorAll(".permissions input:checked")]
+      .map(c=>c.value).join(",");
+
+    await fetch(API,{
+      method:"POST",
+      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+      body:JSON.stringify({
+        action: modo==="crear" ? "crearUsuario" : "editarUsuario",
+        token: localStorage.getItem("token"),
+        username: u_user.value,
+        password: u_pass.value,
+        nombre: u_nombre.value,
+        rol: u_rol.value,
+        activo: u_activo.value,
+        permisos
+      })
+    });
+
+    cerrarUsuario();
+    cargarUsuarios();
+
+    btnGuardar.classList.remove("loading");
+    btnGuardar.innerHTML = "Guardar";
+  }
+
+  async function eliminarUsuario(u){
+    if(!confirm("Eliminar "+u+"?")) return;
+
+    await fetch(API,{
+      method:"POST",
+      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+      body:JSON.stringify({
+        action:"eliminarUsuario",
+        token: localStorage.getItem("token"),
+        username:u
+      })
+    });
+
+    cargarUsuarios();
+  }
+  </script>
+
 <script src="segurity.js"></script>
 <script src="modulos.js"></script>
 
 </body>
-</html>
+</html>entregame el HTML correcto 
