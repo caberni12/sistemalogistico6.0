@@ -456,4 +456,72 @@ tbody td:nth-child(7){
 }
 
 
+/* =====================================================
+   CARDS MOVIL EXPANDIBLES (PRODUCCIÓN)
+===================================================== */
+
+.card-item{
+  position:relative;
+  background:#ffffff;
+  border-radius:18px;
+  padding:16px 18px;
+  box-shadow:var(--shadow-soft);
+  overflow:hidden;
+}
+
+/* toggle + / - */
+.card-toggle{
+  position:absolute;
+  top:14px;
+  right:14px;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  border:none;
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  color:#fff;
+  font-size:22px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+/* filas */
+.card-row{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  font-size:14px;
+}
+
+.card-row b{
+  color:#475569;
+  min-width:90px;
+}
+
+/* bloque oculto */
+.card-extra{
+  max-height:0;
+  opacity:0;
+  overflow:hidden;
+  transition:
+    max-height .35s ease,
+    opacity .25s ease;
+}
+
+/* abierto */
+.card-item.open .card-extra{
+  max-height:600px;
+  opacity:1;
+  margin-top:10px;
+}
+
+.card-item.open .card-toggle{
+  background:linear-gradient(135deg,var(--danger),#dc2626);
+}
+
+/* solo móvil */
+@media(min-width:768px){
+  .cards{display:none}
+}
+
 
