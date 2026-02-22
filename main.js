@@ -1,5 +1,6 @@
-
-/* ========= CONFIG ========= */
+/* =====================================================
+   CONFIG
+===================================================== */
 const API =
 "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
@@ -12,6 +13,8 @@ function iniciarProgreso(modo = "init"){
   const bar = document.getElementById("progressBar");
   const overlay = document.getElementById("loadingOverlay");
   const txt = document.getElementById("loadingText");
+
+  if(!bar || !overlay || !txt) return;
 
   if(modo === "init"){
     txt.textContent = "Iniciando sistema…";
@@ -36,6 +39,7 @@ function iniciarProgreso(modo = "init"){
 function finalizarProgreso(){
   const bar = document.getElementById("progressBar");
   const overlay = document.getElementById("loadingOverlay");
+  if(!bar || !overlay) return;
 
   clearInterval(bar._interval);
   bar.style.width = "100%";
@@ -51,6 +55,13 @@ function finalizarProgreso(){
    INIT – INICIO DE SESIÓN
 ===================================================== */
 document.addEventListener("DOMContentLoaded", async () => {
+
+  // Exponer DOM global (necesario en JS externo)
+  window.panel        = document.getElementById("panel");
+  window.viewer       = document.getElementById("viewer");
+  window.frame        = document.getElementById("frame");
+  window.viewerTitle  = document.getElementById("viewerTitle");
+  window.conexionInfo = document.getElementById("conexionInfo");
 
   iniciarProgreso("init");
 
@@ -71,17 +82,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 /* =====================================================
-   CARGA DE MÓDULOS
+   CARGA DE MÓDULOS / TARJETAS
 ===================================================== */
 async function cargarModulos(user){
 
   const r = await fetch(`${API}?action=listarModulos`);
   const res = await r.json();
 
-  const panel = document.getElementById("panel");
   panel.innerHTML = "";
 
-  if(!res.data) return;
+  if(!res.data || !Array.isArray(res.data)) return;
 
   res.data.forEach(m=>{
     const [id,nombre,archivo,icono,permiso,activo] = m;
@@ -89,13 +99,13 @@ async function cargarModulos(user){
     if(activo !== "SI") return;
     if(user.rol !== "ADMIN" && !user.permisos.includes(permiso)) return;
 
-    panel.innerHTML += `
+    panel.insertAdjacentHTML("beforeend",`
       <div class="card" onclick="abrirModulo('${archivo}','${nombre}')">
         <div class="card-icon">${icono || "📦"}</div>
         <h3>${nombre}</h3>
         <p>Módulo del sistema</p>
       </div>
-    `;
+    `);
   });
 }
 
