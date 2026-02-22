@@ -5,6 +5,7 @@ const API =
 "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
 let USER_IP = "cargando...";
+let MODULO_ACTIVO = null;
 
 /* =====================================================
    LOADER GLOBAL (INFRA ÚNICA)
@@ -13,16 +14,14 @@ function iniciarProgreso(modo = "init"){
   const bar = document.getElementById("progressBar");
   const overlay = document.getElementById("loadingOverlay");
   const txt = document.getElementById("loadingText");
-
   if(!bar || !overlay || !txt) return;
 
-  if(modo === "init"){
-    txt.textContent = "Iniciando sistema…";
-  }else if(modo === "reload"){
-    txt.textContent = "Actualizando sistema…";
-  }else{
-    txt.textContent = "Procesando…";
-  }
+  txt.textContent =
+    modo === "reload"
+      ? "Actualizando sistema…"
+      : modo === "init"
+      ? "Iniciando sistema…"
+      : "Procesando…";
 
   overlay.style.display = "flex";
   bar.style.display = "block";
@@ -56,12 +55,16 @@ function finalizarProgreso(){
 ===================================================== */
 document.addEventListener("DOMContentLoaded", async () => {
 
-  // Exponer DOM global (necesario en JS externo)
+  // DOM global (JS externo)
   window.panel        = document.getElementById("panel");
   window.viewer       = document.getElementById("viewer");
   window.frame        = document.getElementById("frame");
   window.viewerTitle  = document.getElementById("viewerTitle");
   window.conexionInfo = document.getElementById("conexionInfo");
+
+  // Recuperar módulo activo si existe
+  const saved = sessionStorage.getItem("MODULO_ACTIVO");
+  if(saved) MODULO_ACTIVO = JSON.parse(saved);
 
   iniciarProgreso("init");
 
@@ -78,6 +81,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   obtenerIP();
   iniciarReloj();
 
+  // Restaurar módulo activo al iniciar
+  if(MODULO_ACTIVO){
+    abrirModulo(MODULO_ACTIVO.url, MODULO_ACTIVO.titulo, true);
+  }
+
   finalizarProgreso();
 });
 
@@ -85,7 +93,6 @@ document.addEventListener("DOMContentLoaded", async () => {
    CARGA DE MÓDULOS / TARJETAS
 ===================================================== */
 async function cargarModulos(user){
-
   const r = await fetch(`${API}?action=listarModulos`);
   const res = await r.json();
 
@@ -99,8 +106,14 @@ async function cargarModulos(user){
     if(activo !== "SI") return;
     if(user.rol !== "ADMIN" && !user.permisos.includes(permiso)) return;
 
+    const activa =
+      MODULO_ACTIVO && MODULO_ACTIVO.url === archivo ? "active" : "";
+
     panel.insertAdjacentHTML("beforeend",`
-      <div class="card" onclick="abrirModulo('${archivo}','${nombre}')">
+      <div class="card ${activa}"
+           data-url="${archivo}"
+           data-titulo="${nombre}"
+           onclick="abrirModulo('${archivo}','${nombre}')">
         <div class="card-icon">${icono || "📦"}</div>
         <h3>${nombre}</h3>
         <p>Módulo del sistema</p>
@@ -112,21 +125,37 @@ async function cargarModulos(user){
 /* =====================================================
    VISOR DE MÓDULOS
 ===================================================== */
-function abrirModulo(url,titulo){
+function abrirModulo(url, titulo, restaurando = false){
+  MODULO_ACTIVO = { url, titulo };
+  sessionStorage.setItem("MODULO_ACTIVO", JSON.stringify(MODULO_ACTIVO));
+
+  // Marcar tarjeta activa
+  document.querySelectorAll(".card").forEach(c=>{
+    c.classList.toggle("active", c.dataset.url === url);
+  });
+
   panel.style.display = "none";
   viewer.style.display = "flex";
-  frame.src = url;
+
+  if(!restaurando) frame.src = url;
   viewerTitle.textContent = titulo;
 }
 
 function volver(){
+  MODULO_ACTIVO = null;
+  sessionStorage.removeItem("MODULO_ACTIVO");
+
+  document.querySelectorAll(".card").forEach(c=>{
+    c.classList.remove("active");
+  });
+
   viewer.style.display = "none";
   panel.style.display = "grid";
   frame.src = "";
 }
 
 /* =====================================================
-   RECARGAR PANEL
+   RECARGAR PANEL (MANTIENE MÓDULO ACTIVO)
 ===================================================== */
 async function recargarPanel(){
   iniciarProgreso("reload");
@@ -137,8 +166,17 @@ async function recargarPanel(){
     return;
   }
 
-  volver();
   await cargarModulos(user);
+
+  if(MODULO_ACTIVO){
+    panel.style.display = "none";
+    viewer.style.display = "flex";
+    frame.src = MODULO_ACTIVO.url;
+    viewerTitle.textContent = MODULO_ACTIVO.titulo;
+  }else{
+    viewer.style.display = "none";
+    panel.style.display = "grid";
+  }
 
   finalizarProgreso();
 }
@@ -147,6 +185,7 @@ async function recargarPanel(){
    LOGOUT
 ===================================================== */
 function cerrarSesion(){
+  sessionStorage.removeItem("MODULO_ACTIVO");
   cerrarSesionGlobal();
 }
 
