@@ -263,14 +263,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  document.addEventListener("DOMContentLoaded", async () => {
+
+  iniciarProgreso("init"); // 🔹 MODO INICIO
+
+  const user = await validarSesionGlobal();
+  if(!user){
+    finalizarProgreso();
+    return;
+  }
+
   document.getElementById("usuario").innerHTML =
     `👤 ${user.nombre} · ${user.rol}`;
 
-  await cargarModulos(user); // ⏳ ESPERA CARGA
+  await cargarModulos(user);
   obtenerIP();
   iniciarReloj();
 
-  finalizarProgreso(); // ✅ MUESTRA TODO
+  finalizarProgreso();
 });
 
 /* ========= MODULOS ========= */
@@ -313,9 +323,8 @@ function volver(){
   panel.style.display="grid";
   frame.src="";
 }
-
 async function recargarPanel(){
-  iniciarProgreso();
+  iniciarProgreso("reload"); // 🔹 MODO RECARGA
 
   const user = await validarSesionGlobal();
   if(!user){
@@ -328,6 +337,7 @@ async function recargarPanel(){
 
   finalizarProgreso();
 }
+
   
 /* ========= LOGOUT ========= */
 function cerrarSesion(){
@@ -359,95 +369,49 @@ async function obtenerIP(){
   }
 }
 
-/* ========= PROGRESO ========= */
-function iniciarProgreso(){
+
+/* ========= LOADER GLOBAL (INFRA) ========= */
+function iniciarProgreso(modo = "init"){
   const bar = document.getElementById("progressBar");
-  bar.style.width = "0%";
+  const overlay = document.getElementById("loadingOverlay");
+  const txt = document.getElementById("loadingText");
+
+  // 👇 Estados del sistema
+  if(modo === "init"){
+    txt.textContent = "Iniciando sistema…";
+  }else if(modo === "reload"){
+    txt.textContent = "Actualizando sistema…";
+  }else{
+    txt.textContent = "Procesando…";
+  }
+
+  overlay.style.display = "flex";
   bar.style.display = "block";
+  bar.style.width = "0%";
 
   let progreso = 0;
   bar._interval = setInterval(()=>{
     progreso += Math.random() * 12;
     if(progreso >= 90) progreso = 90;
     bar.style.width = progreso + "%";
-  }, 200);
+  }, 180);
 }
 
 function finalizarProgreso(){
   const bar = document.getElementById("progressBar");
+  const overlay = document.getElementById("loadingOverlay");
+
   clearInterval(bar._interval);
   bar.style.width = "100%";
 
   setTimeout(()=>{
-    bar.style.width = "0%";
     bar.style.display = "none";
+    bar.style.width = "0%";
+    overlay.style.display = "none";
   }, 400);
 }
 
-/* ========= BLOQUEO TOTAL ========= */
-function iniciarProgreso(){
-  const bar = document.getElementById("progressBar");
-  const overlay = document.getElementById("loadingOverlay");
 
-  overlay.style.display = "flex";
-  bar.style.display = "block";
-  bar.style.width = "0%";
-
-  let progreso = 0;
-  bar._interval = setInterval(()=>{
-    progreso += Math.random() * 15;
-    if(progreso >= 90) progreso = 90;
-    bar.style.width = progreso + "%";
-  }, 180);
-}
-
-function finalizarProgreso(){
-  const bar = document.getElementById("progressBar");
-  const overlay = document.getElementById("loadingOverlay");
-
-  clearInterval(bar._interval);
-  bar.style.width = "100%";
-
-  setTimeout(()=>{
-    bar.style.display = "none";
-    bar.style.width = "0%";
-    overlay.style.display = "none";
-  }, 450);
-}
-
-/* ========= LOADER GLOBAL ========= */
-
-function iniciarProgreso(texto){
-  const bar = document.getElementById("progressBar");
-  const overlay = document.getElementById("loadingOverlay");
-  const txt = document.getElementById("loadingText");
-
-  txt.textContent = texto || "Iniciando sistema…";
-
-  overlay.style.display = "flex";
-  bar.style.display = "block";
-  bar.style.width = "0%";
-
-  let progreso = 0;
-  bar._interval = setInterval(()=>{
-    progreso += Math.random() * 15;
-    if(progreso >= 90) progreso = 90;
-    bar.style.width = progreso + "%";
-  }, 180);
-}
-function finalizarProgreso(){
-  const bar = document.getElementById("progressBar");
-  const overlay = document.getElementById("loadingOverlay");
-
-  clearInterval(bar._interval);
-  bar.style.width = "100%";
-
-  setTimeout(()=>{
-    bar.style.display = "none";
-    bar.style.width = "0%";
-    overlay.style.display = "none";
-  }, 450);
-}
 </script>
 
 <script src="segurity.js"></script>
