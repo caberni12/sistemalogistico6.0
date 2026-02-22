@@ -209,11 +209,13 @@ header button{
 </head>
 
 <body>
+
 <div id="progressBar"></div>
 
 <div id="loadingOverlay">
-  <span>Actualizando sistema…</span>
+  <span id="loadingText">Iniciando sistema…</span>
 </div>
+
 <header>
   <h1>🚀 Sistema de Gestión Logística AS</h1>
   <div class="right">
@@ -414,9 +416,13 @@ function finalizarProgreso(){
 }
 
 /* ========= LOADER GLOBAL ========= */
-function iniciarProgreso(){
+
+function iniciarProgreso(texto){
   const bar = document.getElementById("progressBar");
   const overlay = document.getElementById("loadingOverlay");
+  const txt = document.getElementById("loadingText");
+
+  txt.textContent = texto || "Iniciando sistema…";
 
   overlay.style.display = "flex";
   bar.style.display = "block";
@@ -429,7 +435,6 @@ function iniciarProgreso(){
     bar.style.width = progreso + "%";
   }, 180);
 }
-
 function finalizarProgreso(){
   const bar = document.getElementById("progressBar");
   const overlay = document.getElementById("loadingOverlay");
