@@ -464,33 +464,26 @@ function exportarXLSX(){
 function recargar(){ cargar(); }
 
 /* =====================================================
-   INIT
-===================================================== */
-document.addEventListener('DOMContentLoaded', cargar);
+// ===============================
+// CARDS MÓVIL – IMPLEMENTACIÓN FINAL
+// ===============================
 
+const cardsContainer = document.getElementById('cards');
+const tableBody = document.getElementById('tabla');
 
-function renderCardsFromTable(){
-  const cards = document.getElementById('cards');
-  cards.innerHTML = '';
+function buildCardsFromTable() {
+  if (!cardsContainer || !tableBody) return;
 
-  const rows = document.querySelectorAll('#tabla tr');
+  cardsContainer.innerHTML = '';
 
-  rows.forEach(tr=>{
+  const rows = tableBody.querySelectorAll('tr');
+  if (rows.length === 0) return;
+
+  rows.forEach(tr => {
     const tds = tr.querySelectorAll('td');
-    if(tds.length === 0) return;
+    if (tds.length < 10) return;
 
-    const [
-      codigo,
-      descripcion,
-      ubicacion,
-      cantidad,
-      registro,
-      entrada,
-      salida,
-      responsable,
-      status,
-      origen
-    ] = [...tds].map(td=>td.textContent.trim());
+    const data = Array.from(tds).map(td => td.textContent.trim());
 
     const card = document.createElement('div');
     card.className = 'card-item';
@@ -498,44 +491,52 @@ function renderCardsFromTable(){
     card.innerHTML = `
       <button class="card-toggle">+</button>
 
-      <!-- SIEMPRE VISIBLE -->
       <div class="card-row">
         <b>Descripción</b>
-        <span>${descripcion}</span>
+        <span>${data[1]}</span>
       </div>
 
       <div class="card-row">
         <b>Ubicación</b>
-        <span>${ubicacion}</span>
+        <span>${data[2]}</span>
       </div>
 
-      <!-- OCULTO -->
       <div class="card-extra">
-
-        <div class="card-row"><b>Código</b><span>${codigo}</span></div>
-        <div class="card-row"><b>Cantidad</b><span>${cantidad}</span></div>
-        <div class="card-row"><b>Registro</b><span>${registro}</span></div>
-        <div class="card-row"><b>Entrada</b><span>${entrada}</span></div>
-        <div class="card-row"><b>Salida</b><span>${salida}</span></div>
-        <div class="card-row"><b>Resp.</b><span>${responsable}</span></div>
-        <div class="card-row"><b>Status</b><span>${status}</span></div>
-        <div class="card-row"><b>Origen</b><span>${origen}</span></div>
-
+        <div class="card-row"><b>Código</b><span>${data[0]}</span></div>
+        <div class="card-row"><b>Cantidad</b><span>${data[3]}</span></div>
+        <div class="card-row"><b>Registro</b><span>${data[4]}</span></div>
+        <div class="card-row"><b>Entrada</b><span>${data[5]}</span></div>
+        <div class="card-row"><b>Salida</b><span>${data[6]}</span></div>
+        <div class="card-row"><b>Resp.</b><span>${data[7]}</span></div>
+        <div class="card-row"><b>Status</b><span>${data[8]}</span></div>
+        <div class="card-row"><b>Origen</b><span>${data[9]}</span></div>
       </div>
     `;
 
-    cards.appendChild(card);
+    cardsContainer.appendChild(card);
   });
 
-  activarToggles();
+  activarTogglesFinal();
 }
 
-function activarToggles(){
-  document.querySelectorAll('.card-toggle').forEach(btn=>{
-    btn.onclick = ()=>{
+function activarTogglesFinal() {
+  cardsContainer.querySelectorAll('.card-toggle').forEach(btn => {
+    btn.onclick = () => {
       const card = btn.closest('.card-item');
-      card.classList.toggle('open');
-      btn.textContent = card.classList.contains('open') ? '−' : '+';
+      const open = card.classList.toggle('open');
+      btn.textContent = open ? '−' : '+';
     };
   });
 }
+
+// ===============================
+// OBSERVADOR REAL (CLAVE)
+// ===============================
+const observer = new MutationObserver(() => {
+  buildCardsFromTable();
+});
+
+observer.observe(tableBody, {
+  childList: true,
+  subtree: false
+});
