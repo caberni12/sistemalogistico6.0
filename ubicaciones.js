@@ -404,9 +404,12 @@ function cerrarScanner(){
   torchOn = false;
 }
 
-/* =====================================================
-   EXPORTAR PDF
-===================================================== */
+   
+function recargar(){
+  cargar();
+}
+
+
 function exportarPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('l','pt','a4');
