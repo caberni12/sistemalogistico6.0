@@ -467,3 +467,75 @@ function recargar(){ cargar(); }
    INIT
 ===================================================== */
 document.addEventListener('DOMContentLoaded', cargar);
+
+
+function renderCardsFromTable(){
+  const cards = document.getElementById('cards');
+  cards.innerHTML = '';
+
+  const rows = document.querySelectorAll('#tabla tr');
+
+  rows.forEach(tr=>{
+    const tds = tr.querySelectorAll('td');
+    if(tds.length === 0) return;
+
+    const [
+      codigo,
+      descripcion,
+      ubicacion,
+      cantidad,
+      registro,
+      entrada,
+      salida,
+      responsable,
+      status,
+      origen
+    ] = [...tds].map(td=>td.textContent.trim());
+
+    const card = document.createElement('div');
+    card.className = 'card-item';
+
+    card.innerHTML = `
+      <button class="card-toggle">+</button>
+
+      <!-- SIEMPRE VISIBLE -->
+      <div class="card-row">
+        <b>Descripción</b>
+        <span>${descripcion}</span>
+      </div>
+
+      <div class="card-row">
+        <b>Ubicación</b>
+        <span>${ubicacion}</span>
+      </div>
+
+      <!-- OCULTO -->
+      <div class="card-extra">
+
+        <div class="card-row"><b>Código</b><span>${codigo}</span></div>
+        <div class="card-row"><b>Cantidad</b><span>${cantidad}</span></div>
+        <div class="card-row"><b>Registro</b><span>${registro}</span></div>
+        <div class="card-row"><b>Entrada</b><span>${entrada}</span></div>
+        <div class="card-row"><b>Salida</b><span>${salida}</span></div>
+        <div class="card-row"><b>Resp.</b><span>${responsable}</span></div>
+        <div class="card-row"><b>Status</b><span>${status}</span></div>
+        <div class="card-row"><b>Origen</b><span>${origen}</span></div>
+
+      </div>
+    `;
+
+    cards.appendChild(card);
+  });
+
+  activarToggles();
+}
+
+function activarToggles(){
+  document.querySelectorAll('.card-toggle').forEach(btn=>{
+    btn.onclick = ()=>{
+      const card = btn.closest('.card-item');
+      card.classList.toggle('open');
+      btn.textContent = card.classList.contains('open') ? '−' : '+';
+    };
+  });
+}
