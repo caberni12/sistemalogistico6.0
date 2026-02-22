@@ -1,4 +1,4 @@
-<script>
+
 /* ========= CONFIG ========= */
 const API =
 "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
@@ -166,4 +166,3 @@ async function obtenerIP(){
     USER_IP = "no disponible";
   }
 }
-</script>
