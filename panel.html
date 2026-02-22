@@ -457,33 +457,65 @@ input,select{
 
 <script>
 /* =====================================================
-   CONFIG
+   CONFIGURACIÓN
 ===================================================== */
-const API = ""https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
+const API = "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
 let usuarios = [];
 let modo = "crear";
 let SESSION = null;
 
 /* =====================================================
-   DOM
+   UTILIDADES
 ===================================================== */
-const btnLoad        = document.getElementById("btnLoad");
-const btnGuardar     = document.getElementById("btnGuardar");
-const tablaUsuarios  = document.getElementById("tablaUsuarios");
-const mobileList     = document.getElementById("mobileList");
-const modalUsuario   = document.getElementById("modalUsuario");
-const tituloUsuario  = document.getElementById("tituloUsuario");
-const busqueda       = document.getElementById("busqueda");
+function $(id){
+  const el = document.getElementById(id);
+  if(!el) throw new Error("Elemento faltante: #" + id);
+  return el;
+}
 
-const u_user   = document.getElementById("u_user");
-const u_pass   = document.getElementById("u_pass");
-const u_nombre = document.getElementById("u_nombre");
-const u_rol    = document.getElementById("u_rol");
-const u_activo = document.getElementById("u_activo");
+async function apiPost(payload){
+  const r = await fetch(API,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const text = await r.text();
+  let json;
+
+  try{
+    json = JSON.parse(text);
+  }catch{
+    throw new Error("Respuesta no JSON (deploy incorrecto)");
+  }
+
+  if(json.token){
+    localStorage.setItem("token", json.token);
+  }
+
+  return json;
+}
 
 /* =====================================================
-   SESIÓN (VERIFY + RENUEVA TOKEN)
+   DOM
+===================================================== */
+const btnLoad        = $("btnLoad");
+const btnGuardar     = $("btnGuardar");
+const tablaUsuarios  = $("tablaUsuarios");
+const mobileList     = $("mobileList");
+const modalUsuario   = $("modalUsuario");
+const tituloUsuario  = $("tituloUsuario");
+const busqueda       = $("busqueda");
+
+const u_user   = $("u_user");
+const u_pass   = $("u_pass");
+const u_nombre = $("u_nombre");
+const u_rol    = $("u_rol");
+const u_activo = $("u_activo");
+
+/* =====================================================
+   SESIÓN (VERIFY + RENOVACIÓN)
 ===================================================== */
 (async ()=>{
   const token = localStorage.getItem("token");
@@ -505,8 +537,8 @@ const u_activo = document.getElementById("u_activo");
     SESSION = res.data;
     localStorage.setItem("token", res.token);
 
-  }catch(err){
-    console.error(err);
+  }catch(e){
+    console.error(e);
     location.href = "index.html";
   }
 })();
@@ -515,29 +547,26 @@ const u_activo = document.getElementById("u_activo");
    CARGAR USUARIOS
 ===================================================== */
 async function cargarUsuarios(){
-  btnLoad.classList.add("loading");
-  btnLoad.innerHTML = "Cargando...";
+  btnLoad.disabled = true;
+  btnLoad.innerText = "Cargando...";
 
-  const r = await fetch(API,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({
+  try{
+    const res = await apiPost({
       action:"listarUsuarios",
       token: localStorage.getItem("token")
-    })
-  });
+    });
 
-  const res = await r.json();
-  if(!res.ok){
-    alert(res.msg || "Error al cargar usuarios");
-    return;
+    if(!res.ok) throw new Error(res.msg);
+
+    usuarios = res.data || [];
+    render(usuarios);
+
+  }catch(err){
+    alert(err.message);
   }
 
-  usuarios = res.data;
-  render(usuarios);
-
-  btnLoad.classList.remove("loading");
-  btnLoad.innerHTML = "Cargar usuarios";
+  btnLoad.disabled = false;
+  btnLoad.innerText = "Cargar usuarios";
 }
 
 /* =====================================================
@@ -548,30 +577,33 @@ function render(data){
   mobileList.innerHTML = "";
 
   data.forEach(u=>{
+    const [
+      id, user, pass, nombre, rol, activo, permisos
+    ] = u;
+
     tablaUsuarios.innerHTML += `
       <tr>
-        <td>${u[1]}</td>
-        <td>${u[2]}</td>
-        <td>${u[3]}</td>
-        <td>${u[4]}</td>
-        <td>${u[5]}</td>
+        <td>${user}</td>
+        <td>${nombre}</td>
+        <td>${rol}</td>
+        <td>${activo}</td>
         <td>
-          <button onclick="editarUsuarioForm(
-            '${u[1]}','${u[2]}','${u[3]}','${u[4]}','${u[5]}','${u[6]||""}'
+          <button onclick="abrirEditar(
+            '${user}','${pass}','${nombre}','${rol}','${activo}','${permisos||""}'
           )">Editar</button>
-          <button onclick="eliminarUsuario('${u[1]}')">Eliminar</button>
+          <button onclick="eliminarUsuario('${user}')">Eliminar</button>
         </td>
       </tr>`;
 
     mobileList.innerHTML += `
       <div class="mobile-card">
-        <h4>${u[3]}</h4>
-        <p><b>Usuario:</b> ${u[1]}</p>
-        <p><b>Rol:</b> ${u[4]}</p>
-        <button onclick="editarUsuarioForm(
-          '${u[1]}','${u[2]}','${u[3]}','${u[4]}','${u[5]}','${u[6]||""}'
+        <h4>${nombre}</h4>
+        <p><b>Usuario:</b> ${user}</p>
+        <p><b>Rol:</b> ${rol}</p>
+        <button onclick="abrirEditar(
+          '${user}','${pass}','${nombre}','${rol}','${activo}','${permisos||""}'
         )">Editar</button>
-        <button onclick="eliminarUsuario('${u[1]}')">Eliminar</button>
+        <button onclick="eliminarUsuario('${user}')">Eliminar</button>
       </div>`;
   });
 }
@@ -581,13 +613,11 @@ function render(data){
 ===================================================== */
 function filtrar(){
   const q = busqueda.value.toLowerCase();
-  render(
-    usuarios.filter(u =>
-      u[1].toLowerCase().includes(q) ||
-      u[3].toLowerCase().includes(q) ||
-      u[4].toLowerCase().includes(q)
-    )
-  );
+  render(usuarios.filter(u =>
+    (u[1]||"").toLowerCase().includes(q) ||
+    (u[3]||"").toLowerCase().includes(q) ||
+    (u[4]||"").toLowerCase().includes(q)
+  ));
 }
 
 /* =====================================================
@@ -601,9 +631,10 @@ function abrirCrear(){
   modalUsuario.style.display = "flex";
 }
 
-function editarUsuarioForm(u,p,n,r,a,per){
+function abrirEditar(u,p,n,r,a,per){
   modo = "editar";
   tituloUsuario.innerText = "Editar Usuario";
+
   u_user.value = u;
   u_user.disabled = true;
   u_pass.value = p;
@@ -612,7 +643,7 @@ function editarUsuarioForm(u,p,n,r,a,per){
   u_activo.value = a;
 
   document.querySelectorAll(".permissions input").forEach(c=>{
-    c.checked = (per || "").includes(c.value);
+    c.checked = (per||"").includes(c.value);
   });
 
   modalUsuario.style.display = "flex";
@@ -635,16 +666,14 @@ function limpiar(){
    GUARDAR
 ===================================================== */
 async function guardarUsuario(){
-  btnGuardar.classList.add("loading");
-  btnGuardar.innerHTML = "Guardando...";
+  btnGuardar.disabled = true;
+  btnGuardar.innerText = "Guardando...";
 
   const permisos = [...document.querySelectorAll(".permissions input:checked")]
     .map(c=>c.value).join(",");
 
-  const r = await fetch(API,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({
+  try{
+    const res = await apiPost({
       action: modo==="crear" ? "crearUsuario" : "editarUsuario",
       token: localStorage.getItem("token"),
       username: u_user.value,
@@ -653,20 +682,19 @@ async function guardarUsuario(){
       rol: u_rol.value,
       activo: u_activo.value,
       permisos
-    })
-  });
+    });
 
-  const res = await r.json();
-  if(!res.ok){
-    alert(res.msg || "Error al guardar");
-    return;
+    if(!res.ok) throw new Error(res.msg);
+
+    cerrarUsuario();
+    cargarUsuarios();
+
+  }catch(err){
+    alert(err.message);
   }
 
-  cerrarUsuario();
-  cargarUsuarios();
-
-  btnGuardar.classList.remove("loading");
-  btnGuardar.innerHTML = "Guardar";
+  btnGuardar.disabled = false;
+  btnGuardar.innerText = "Guardar";
 }
 
 /* =====================================================
@@ -675,23 +703,20 @@ async function guardarUsuario(){
 async function eliminarUsuario(username){
   if(!confirm("Eliminar usuario "+username+"?")) return;
 
-  const r = await fetch(API,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({
+  try{
+    const res = await apiPost({
       action:"eliminarUsuario",
       token: localStorage.getItem("token"),
       username
-    })
-  });
+    });
 
-  const res = await r.json();
-  if(!res.ok){
-    alert(res.msg || "Error al eliminar");
-    return;
+    if(!res.ok) throw new Error(res.msg);
+
+    cargarUsuarios();
+
+  }catch(err){
+    alert(err.message);
   }
-
-  cargarUsuarios();
 }
 </script>
 
