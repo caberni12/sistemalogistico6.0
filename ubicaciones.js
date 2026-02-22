@@ -228,11 +228,14 @@ cards.innerHTML += `
       </button>
     </div>
 
+    <!-- VISIBLE POR DEFECTO -->
+    <div class="card-row"><b>Código</b><span>${r[5]}</span></div>
     <div class="card-row"><b>Ubicación</b><span>${r[4]}</span></div>
     <div class="card-row"><b>Stock</b><span>${r[7]}</span></div>
 
+    <!-- OCULTO / EXPANDIBLE -->
     <div class="card-body" style="display:${open ? 'block' : 'none'}">
-      <div class="card-row"><b>Código</b><span>${r[5]}</span></div>
+
       <div class="card-row"><b>Responsable</b><span>${r[8]}</span></div>
       <div class="card-row"><b>Origen</b><span>${r[10]}</span></div>
 
@@ -249,10 +252,10 @@ cards.innerHTML += `
         <button class="edit" onclick='editar(${JSON.stringify(r)})'>✏️</button>
         <button class="del" onclick='eliminar("${r[0]}",this)'>🗑️</button>
       </div>
+
     </div>
 
   </div>`;
-    
   });
 }
 
