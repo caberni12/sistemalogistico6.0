@@ -251,18 +251,24 @@ const API =
 
 let USER_IP = "cargando...";
 
-/* ========= INIT ========= */
 document.addEventListener("DOMContentLoaded", async () => {
 
+  iniciarProgreso(); // 🔒 OCULTA TODO
+
   const user = await validarSesionGlobal();
-  if(!user) return;
+  if(!user){
+    finalizarProgreso();
+    return;
+  }
 
   document.getElementById("usuario").innerHTML =
     `👤 ${user.nombre} · ${user.rol}`;
 
-  cargarModulos(user);
+  await cargarModulos(user); // ⏳ ESPERA CARGA
   obtenerIP();
   iniciarReloj();
+
+  finalizarProgreso(); // ✅ MUESTRA TODO
 });
 
 /* ========= MODULOS ========= */
@@ -407,6 +413,36 @@ function finalizarProgreso(){
   }, 450);
 }
 
+/* ========= LOADER GLOBAL ========= */
+function iniciarProgreso(){
+  const bar = document.getElementById("progressBar");
+  const overlay = document.getElementById("loadingOverlay");
+
+  overlay.style.display = "flex";
+  bar.style.display = "block";
+  bar.style.width = "0%";
+
+  let progreso = 0;
+  bar._interval = setInterval(()=>{
+    progreso += Math.random() * 15;
+    if(progreso >= 90) progreso = 90;
+    bar.style.width = progreso + "%";
+  }, 180);
+}
+
+function finalizarProgreso(){
+  const bar = document.getElementById("progressBar");
+  const overlay = document.getElementById("loadingOverlay");
+
+  clearInterval(bar._interval);
+  bar.style.width = "100%";
+
+  setTimeout(()=>{
+    bar.style.display = "none";
+    bar.style.width = "0%";
+    overlay.style.display = "none";
+  }, 450);
+}
 </script>
 
 <script src="segurity.js"></script>
