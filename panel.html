@@ -457,65 +457,32 @@ input,select{
 
 <script>
 /* =====================================================
-   CONFIGURACIÓN
+   CONFIG
 ===================================================== */
 const API = "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
 let usuarios = [];
 let modo = "crear";
-let SESSION = null;
 
 /* =====================================================
-   UTILIDADES
+   DOM (NO CAMBIAR IDS)
 ===================================================== */
-function $(id){
-  const el = document.getElementById(id);
-  if(!el) throw new Error("Elemento faltante: #" + id);
-  return el;
-}
+const btnLoad       = document.getElementById("btnLoad");
+const btnGuardar    = document.getElementById("btnGuardar");
+const tablaUsuarios = document.getElementById("tablaUsuarios");
+const mobileList    = document.getElementById("mobileList");
+const modalUsuario  = document.getElementById("modalUsuario");
+const tituloUsuario = document.getElementById("tituloUsuario");
+const busqueda      = document.getElementById("busqueda");
 
-async function apiPost(payload){
-  const r = await fetch(API,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  const text = await r.text();
-  let json;
-
-  try{
-    json = JSON.parse(text);
-  }catch{
-    throw new Error("Respuesta no JSON (deploy incorrecto)");
-  }
-
-  if(json.token){
-    localStorage.setItem("token", json.token);
-  }
-
-  return json;
-}
+const u_user   = document.getElementById("u_user");
+const u_pass   = document.getElementById("u_pass");
+const u_nombre = document.getElementById("u_nombre");
+const u_rol    = document.getElementById("u_rol");
+const u_activo = document.getElementById("u_activo");
 
 /* =====================================================
-   DOM
-===================================================== */
-const btnLoad        = $("btnLoad");
-const btnGuardar     = $("btnGuardar");
-const tablaUsuarios  = $("tablaUsuarios");
-const mobileList     = $("mobileList");
-const modalUsuario   = $("modalUsuario");
-const tituloUsuario  = $("tituloUsuario");
-const busqueda       = $("busqueda");
-
-const u_user   = $("u_user");
-const u_pass   = $("u_pass");
-const u_nombre = $("u_nombre");
-const u_rol    = $("u_rol");
-const u_activo = $("u_activo");
-
-/* =====================================================
-   SESIÓN (VERIFY + RENOVACIÓN)
+   SESIÓN (VERIFY)
 ===================================================== */
 (async ()=>{
   const token = localStorage.getItem("token");
@@ -525,21 +492,21 @@ const u_activo = $("u_activo");
   }
 
   try{
-    const r = await fetch(`${API}?action=verify&token=${token}`);
+    const r = await fetch(API + "?action=verify&token=" + token);
     const res = await r.json();
 
-    if(!res.valid || res.data.rol !== "ADMIN"){
+    if(!res.valid){
       localStorage.clear();
       location.href = "index.html";
       return;
     }
 
-    SESSION = res.data;
+    // 🔴 OBLIGATORIO: guardar token renovado
     localStorage.setItem("token", res.token);
 
   }catch(e){
     console.error(e);
-    location.href = "index.html";
+    alert("No se pudo validar sesión");
   }
 })();
 
@@ -547,26 +514,25 @@ const u_activo = $("u_activo");
    CARGAR USUARIOS
 ===================================================== */
 async function cargarUsuarios(){
-  btnLoad.disabled = true;
-  btnLoad.innerText = "Cargando...";
-
   try{
-    const res = await apiPost({
-      action:"listarUsuarios",
-      token: localStorage.getItem("token")
+    const r = await fetch(API,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        action:"listarUsuarios",
+        token: localStorage.getItem("token")
+      })
     });
 
-    if(!res.ok) throw new Error(res.msg);
+    const res = await r.json();
+    if(!res.ok) throw res.msg;
 
-    usuarios = res.data || [];
+    usuarios = res.data;
     render(usuarios);
 
   }catch(err){
-    alert(err.message);
+    alert("Error cargar usuarios: " + err);
   }
-
-  btnLoad.disabled = false;
-  btnLoad.innerText = "Cargar usuarios";
 }
 
 /* =====================================================
@@ -577,34 +543,32 @@ function render(data){
   mobileList.innerHTML = "";
 
   data.forEach(u=>{
-    const [
-      id, user, pass, nombre, rol, activo, permisos
-    ] = u;
-
     tablaUsuarios.innerHTML += `
       <tr>
-        <td>${user}</td>
-        <td>${nombre}</td>
-        <td>${rol}</td>
-        <td>${activo}</td>
+        <td>${u[1]}</td>
+        <td>${u[3]}</td>
+        <td>${u[4]}</td>
+        <td>${u[5]}</td>
         <td>
-          <button onclick="abrirEditar(
-            '${user}','${pass}','${nombre}','${rol}','${activo}','${permisos||""}'
+          <button onclick="editarUsuario(
+            '${u[1]}','${u[2]}','${u[3]}','${u[4]}','${u[5]}','${u[6]||""}'
           )">Editar</button>
-          <button onclick="eliminarUsuario('${user}')">Eliminar</button>
+          <button onclick="eliminarUsuario('${u[1]}')">Eliminar</button>
         </td>
-      </tr>`;
+      </tr>
+    `;
 
     mobileList.innerHTML += `
       <div class="mobile-card">
-        <h4>${nombre}</h4>
-        <p><b>Usuario:</b> ${user}</p>
-        <p><b>Rol:</b> ${rol}</p>
-        <button onclick="abrirEditar(
-          '${user}','${pass}','${nombre}','${rol}','${activo}','${permisos||""}'
+        <h4>${u[3]}</h4>
+        <p>Usuario: ${u[1]}</p>
+        <p>Rol: ${u[4]}</p>
+        <button onclick="editarUsuario(
+          '${u[1]}','${u[2]}','${u[3]}','${u[4]}','${u[5]}','${u[6]||""}'
         )">Editar</button>
-        <button onclick="eliminarUsuario('${user}')">Eliminar</button>
-      </div>`;
+        <button onclick="eliminarUsuario('${u[1]}')">Eliminar</button>
+      </div>
+    `;
   });
 }
 
@@ -614,9 +578,9 @@ function render(data){
 function filtrar(){
   const q = busqueda.value.toLowerCase();
   render(usuarios.filter(u =>
-    (u[1]||"").toLowerCase().includes(q) ||
-    (u[3]||"").toLowerCase().includes(q) ||
-    (u[4]||"").toLowerCase().includes(q)
+    u[1].toLowerCase().includes(q) ||
+    u[3].toLowerCase().includes(q) ||
+    u[4].toLowerCase().includes(q)
   ));
 }
 
@@ -631,7 +595,7 @@ function abrirCrear(){
   modalUsuario.style.display = "flex";
 }
 
-function abrirEditar(u,p,n,r,a,per){
+function editarUsuario(u,p,n,r,a,per){
   modo = "editar";
   tituloUsuario.innerText = "Editar Usuario";
 
@@ -666,60 +630,63 @@ function limpiar(){
    GUARDAR
 ===================================================== */
 async function guardarUsuario(){
-  btnGuardar.disabled = true;
-  btnGuardar.innerText = "Guardando...";
-
   const permisos = [...document.querySelectorAll(".permissions input:checked")]
     .map(c=>c.value).join(",");
 
   try{
-    const res = await apiPost({
-      action: modo==="crear" ? "crearUsuario" : "editarUsuario",
-      token: localStorage.getItem("token"),
-      username: u_user.value,
-      password: u_pass.value,
-      nombre: u_nombre.value,
-      rol: u_rol.value,
-      activo: u_activo.value,
-      permisos
+    const r = await fetch(API,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        action: modo === "crear" ? "crearUsuario" : "editarUsuario",
+        token: localStorage.getItem("token"),
+        username: u_user.value,
+        password: u_pass.value,
+        nombre: u_nombre.value,
+        rol: u_rol.value,
+        activo: u_activo.value,
+        permisos
+      })
     });
 
-    if(!res.ok) throw new Error(res.msg);
+    const res = await r.json();
+    if(!res.ok) throw res.msg;
 
     cerrarUsuario();
     cargarUsuarios();
 
   }catch(err){
-    alert(err.message);
+    alert("Error guardar usuario: " + err);
   }
-
-  btnGuardar.disabled = false;
-  btnGuardar.innerText = "Guardar";
 }
 
 /* =====================================================
    ELIMINAR
 ===================================================== */
 async function eliminarUsuario(username){
-  if(!confirm("Eliminar usuario "+username+"?")) return;
+  if(!confirm("Eliminar " + username + "?")) return;
 
   try{
-    const res = await apiPost({
-      action:"eliminarUsuario",
-      token: localStorage.getItem("token"),
-      username
+    const r = await fetch(API,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        action:"eliminarUsuario",
+        token: localStorage.getItem("token"),
+        username
+      })
     });
 
-    if(!res.ok) throw new Error(res.msg);
+    const res = await r.json();
+    if(!res.ok) throw res.msg;
 
     cargarUsuarios();
 
   }catch(err){
-    alert(err.message);
+    alert("Error eliminar usuario: " + err);
   }
 }
 </script>
-
 <script src="segurity.js"></script>
 <script src="modulos.js"></script>
 <script src="auth.js"></script>
