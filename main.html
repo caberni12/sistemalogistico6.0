@@ -172,11 +172,48 @@ header button{
   transition:width .25s ease;
   box-shadow:0 0 10px rgba(20,184,166,.6);
 }
+
+/* ======================
+   BARRA + OVERLAY
+====================== */
+#progressBar{
+  position:fixed;
+  top:0;
+  left:0;
+  height:3px;
+  width:0%;
+  background:linear-gradient(90deg,#3b82f6,#14b8a6);
+  z-index:9999;
+  display:none;
+}
+
+#loadingOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(241,245,249,.95);
+  backdrop-filter:blur(4px);
+  z-index:9998;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:18px;
+}
+
+#loadingOverlay span{
+  font-size:14px;
+  font-weight:600;
+  color:#334155;
+}
 </style>
 </head>
 
 <body>
 <div id="progressBar"></div>
+
+<div id="loadingOverlay">
+  <span>Actualizando sistema…</span>
+</div>
 <header>
   <h1>🚀 Sistema de Gestión Logística AS</h1>
   <div class="right">
@@ -283,6 +320,7 @@ async function recargarPanel(){
 
   finalizarProgreso();
 }
+  
 /* ========= LOGOUT ========= */
 function cerrarSesion(){
   cerrarSesionGlobal();
@@ -337,6 +375,38 @@ function finalizarProgreso(){
     bar.style.display = "none";
   }, 400);
 }
+
+/* ========= BLOQUEO TOTAL ========= */
+function iniciarProgreso(){
+  const bar = document.getElementById("progressBar");
+  const overlay = document.getElementById("loadingOverlay");
+
+  overlay.style.display = "flex";
+  bar.style.display = "block";
+  bar.style.width = "0%";
+
+  let progreso = 0;
+  bar._interval = setInterval(()=>{
+    progreso += Math.random() * 15;
+    if(progreso >= 90) progreso = 90;
+    bar.style.width = progreso + "%";
+  }, 180);
+}
+
+function finalizarProgreso(){
+  const bar = document.getElementById("progressBar");
+  const overlay = document.getElementById("loadingOverlay");
+
+  clearInterval(bar._interval);
+  bar.style.width = "100%";
+
+  setTimeout(()=>{
+    bar.style.display = "none";
+    bar.style.width = "0%";
+    overlay.style.display = "none";
+  }, 450);
+}
+
 </script>
 
 <script src="segurity.js"></script>
