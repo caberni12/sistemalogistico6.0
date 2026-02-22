@@ -455,3 +455,95 @@ tbody td:nth-child(7){
   }
 }
 
+
+/* =====================================================
+   LISTA MOVIL TIPO TRACKMASTER
+===================================================== */
+
+.mobile-list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.mobile-item{
+  background:#1f1f1f;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 8px 24px rgba(0,0,0,.45);
+  color:#fff;
+}
+
+.mobile-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+/* ESTADO */
+.mobile-status{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-weight:900;
+  color:#22c55e;
+  letter-spacing:.05em;
+}
+
+.mobile-status i{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:#22c55e;
+  color:#000;
+  font-size:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* CODIGO */
+.mobile-code{
+  font-weight:900;
+  color:#22c55e;
+}
+
+/* CANTIDAD */
+.mobile-qty{
+  margin:6px 0 10px;
+  font-size:13px;
+  color:#d1d5db;
+}
+
+/* TITULO */
+.mobile-title{
+  font-size:15px;
+  font-weight:700;
+  line-height:1.4;
+  padding-right:60px;
+  position:relative;
+}
+
+/* BADGE */
+.mobile-badge{
+  position:absolute;
+  right:0;
+  top:0;
+  background:#6b7280;
+  color:#fff;
+  font-size:12px;
+  font-weight:800;
+  padding:4px 10px;
+  border-radius:10px;
+}
+
+/* QR */
+.mobile-qr{
+  font-size:20px;
+  opacity:.7;
+}
+
+/* SOLO MOVIL */
+@media(min-width:768px){
+  .mobile-list{display:none}
+}
