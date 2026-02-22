@@ -1,3 +1,4 @@
+let CARD_STATE = {}; // idFila => true (expandida) | false (colapsada)
 /* =====================================================
    CONFIGURACIÓN
 ===================================================== */
@@ -213,34 +214,45 @@ function renderTabla(arr){
           <button class="del" onclick='eliminar("${r[0]}",this)'>🗑️</button>
         </td>
       </tr>`;
+/* ===== TARJETA MÓVIL ===== */
+const id = r[0];
+const open = CARD_STATE[id] === true;
 
-    /* ===== TARJETA MÓVIL ===== */
-    cards.innerHTML += `
-      <div class="card-item">
+cards.innerHTML += `
+  <div class="card-item" data-id="${id}">
 
-        <div class="desc">${r[6]}</div>
+    <div class="card-head">
+      <div class="desc">${r[6]}</div>
+      <button onclick="toggleCard('${id}', this)">
+        ${open ? '−' : '+'}
+      </button>
+    </div>
 
-        <div class="card-row"><b>Código</b><span>${r[5]}</span></div>
-        <div class="card-row"><b>Ubicación</b><span>${r[4]}</span></div>
-        <div class="card-row"><b>Stock</b><span>${r[7]}</span></div>
-        <div class="card-row"><b>Responsable</b><span>${r[8]}</span></div>
-        <div class="card-row"><b>Origen</b><span>${r[10]}</span></div>
+    <div class="card-row"><b>Ubicación</b><span>${r[4]}</span></div>
+    <div class="card-row"><b>Stock</b><span>${r[7]}</span></div>
 
-        <div class="card-fechas">
-          <div>📥 ${formatFechaTabla(r[2])}</div>
-          <div>📤 ${formatFechaTabla(r[3])}</div>
-        </div>
+    <div class="card-body" style="display:${open ? 'block' : 'none'}">
+      <div class="card-row"><b>Código</b><span>${r[5]}</span></div>
+      <div class="card-row"><b>Responsable</b><span>${r[8]}</span></div>
+      <div class="card-row"><b>Origen</b><span>${r[10]}</span></div>
 
-        <span class="badge ${r[9] === 'VIGENTE' ? 'vigente' : 'retirado'}">
-          ${r[9]}
-        </span>
+      <div class="card-fechas">
+        <div>📥 ${formatFechaTabla(r[2])}</div>
+        <div>📤 ${formatFechaTabla(r[3])}</div>
+      </div>
 
-        <div class="card-actions">
-          <button class="edit" onclick='editar(${JSON.stringify(r)})'>✏️</button>
-          <button class="del" onclick='eliminar("${r[0]}",this)'>🗑️</button>
-        </div>
+      <span class="badge ${r[9] === 'VIGENTE' ? 'vigente' : 'retirado'}">
+        ${r[9]}
+      </span>
 
-      </div>`;
+      <div class="card-actions">
+        <button class="edit" onclick='editar(${JSON.stringify(r)})'>✏️</button>
+        <button class="del" onclick='eliminar("${r[0]}",this)'>🗑️</button>
+      </div>
+    </div>
+
+  </div>`;
+    
   });
 }
 
@@ -461,3 +473,15 @@ function exportarXLSX(){
   XLSX.writeFile(wb,'ubicaciones.xlsx');
 }
 
+function toggleCard(id, btn){
+  CARD_STATE[id] = !CARD_STATE[id];
+
+  const card = document.querySelector(`.card-item[data-id="${id}"]`);
+  if(!card) return;
+
+  const body = card.querySelector('.card-body');
+  if(!body) return;
+
+  body.style.display = CARD_STATE[id] ? 'block' : 'none';
+  btn.textContent = CARD_STATE[id] ? '−' : '+';
+}
