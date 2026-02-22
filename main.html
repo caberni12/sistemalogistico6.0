@@ -157,11 +157,26 @@ header button{
     border-radius:12px;
   }
 }
+
+/* ======================
+   LOADER PROGRESO
+====================== */
+#progressBar{
+  position:fixed;
+  top:0;
+  left:0;
+  height:3px;
+  width:0%;
+  background:linear-gradient(90deg,#3b82f6,#14b8a6);
+  z-index:9999;
+  transition:width .25s ease;
+  box-shadow:0 0 10px rgba(20,184,166,.6);
+}
 </style>
 </head>
 
 <body>
-
+<div id="progressBar"></div>
 <header>
   <h1>🚀 Sistema de Gestión Logística AS</h1>
   <div class="right">
@@ -254,14 +269,20 @@ function volver(){
   frame.src="";
 }
 
-/* ========= RECARGAR ========= */
 async function recargarPanel(){
-  const user = await validarSesionGlobal();
-  if(!user) return;
-  volver();
-  cargarModulos(user);
-}
+  iniciarProgreso();
 
+  const user = await validarSesionGlobal();
+  if(!user){
+    finalizarProgreso();
+    return;
+  }
+
+  volver();
+  await cargarModulos(user);
+
+  finalizarProgreso();
+}
 /* ========= LOGOUT ========= */
 function cerrarSesion(){
   cerrarSesionGlobal();
@@ -290,6 +311,31 @@ async function obtenerIP(){
   }catch{
     USER_IP = "no disponible";
   }
+}
+
+/* ========= PROGRESO ========= */
+function iniciarProgreso(){
+  const bar = document.getElementById("progressBar");
+  bar.style.width = "0%";
+  bar.style.display = "block";
+
+  let progreso = 0;
+  bar._interval = setInterval(()=>{
+    progreso += Math.random() * 12;
+    if(progreso >= 90) progreso = 90;
+    bar.style.width = progreso + "%";
+  }, 200);
+}
+
+function finalizarProgreso(){
+  const bar = document.getElementById("progressBar");
+  clearInterval(bar._interval);
+  bar.style.width = "100%";
+
+  setTimeout(()=>{
+    bar.style.width = "0%";
+    bar.style.display = "none";
+  }, 400);
 }
 </script>
 
