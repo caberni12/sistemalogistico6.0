@@ -31,7 +31,7 @@ const btnGuardar = document.getElementById("btnGuardar");
   const d = await r.json();
   if(!d.valid || d.rol!=="ADMIN"){
     localStorage.clear();
-    location.href="login.html";
+    location.href="index.html";
   }
 })();
 
