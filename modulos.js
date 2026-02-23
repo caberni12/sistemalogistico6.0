@@ -1,43 +1,25 @@
 /* ======================================================
-   MODULOS.JS – CRUD COMPLETO (TABLA + TARJETAS + MODAL)
+   MODULOS.JS – FUNCIONAL REAL (Apps Script clásico)
 ====================================================== */
 
-/* ================= CONFIG ================= */
 const API_MODULOS =
   "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
-/* ================= ESTADO ================= */
 let MODULOS = [];
 let MODO_MODULO = "crear";
 let MODULO_ID = null;
 
 /* ================= DOM ================= */
-let modalModulo,
-    modalListaModulos,
-    tablaModulos,
-    modulosCards,
-    m_nombre,
-    m_archivo,
-    m_icono,
-    m_permiso,
-    m_activo;
+const modalModulo       = document.getElementById("modalModulo");
+const modalListaModulos = document.getElementById("modalListaModulos");
+const tablaModulos      = document.getElementById("tablaModulos");
+const modulosCards      = document.getElementById("modulosCards");
 
-/* ======================================================
-   INIT
-====================================================== */
-document.addEventListener("DOMContentLoaded", () => {
-
-  modalModulo       = document.getElementById("modalModulo");
-  modalListaModulos = document.getElementById("modalListaModulos");
-  tablaModulos      = document.getElementById("tablaModulos");
-  modulosCards      = document.getElementById("modulosCards");
-
-  m_nombre  = document.getElementById("m_nombre");
-  m_archivo = document.getElementById("m_archivo");
-  m_icono   = document.getElementById("m_icono");
-  m_permiso = document.getElementById("m_permiso");
-  m_activo  = document.getElementById("m_activo");
-});
+const m_nombre  = document.getElementById("m_nombre");
+const m_archivo = document.getElementById("m_archivo");
+const m_icono   = document.getElementById("m_icono");
+const m_permiso = document.getElementById("m_permiso");
+const m_activo  = document.getElementById("m_activo");
 
 /* ======================================================
    MODALES
@@ -63,7 +45,7 @@ function cerrarListaModulos(){
 }
 
 /* ======================================================
-   CARGAR MODULOS
+   CARGAR MODULOS (GET REAL)
 ====================================================== */
 async function cargarModulos(){
 
@@ -72,20 +54,16 @@ async function cargarModulos(){
   modulosCards.innerHTML = "";
 
   try{
-    const r = await fetch(API_MODULOS, {
-      method: "POST",
-      headers: { "Content-Type":"text/plain;charset=UTF-8" },
-      body: JSON.stringify({ action:"listarModulos" })
-    });
-
+    const r = await fetch(API_MODULOS + "?action=listarModulos");
     const d = await r.json();
+
     MODULOS = d.data || [];
     renderModulos();
 
   }catch(e){
     console.error(e);
     tablaModulos.innerHTML =
-      `<tr><td colspan="5">Error al cargar</td></tr>`;
+      `<tr><td colspan="5">Error al cargar módulos</td></tr>`;
   }
 }
 
@@ -100,8 +78,6 @@ function renderModulos(){
   if(!MODULOS.length){
     tablaModulos.innerHTML =
       `<tr><td colspan="5">Sin módulos</td></tr>`;
-    modulosCards.innerHTML =
-      `<p style="text-align:center">Sin módulos</p>`;
     return;
   }
 
@@ -114,7 +90,6 @@ function renderModulos(){
     const permiso = m[4];
     const activo  = m[5];
 
-    /* ===== TABLA ===== */
     tablaModulos.innerHTML += `
       <tr>
         <td>${nombre}</td>
@@ -123,14 +98,12 @@ function renderModulos(){
         <td>${activo}</td>
         <td>
           <button class="btn-edit"
-            onclick="editarModulo(
-              ${id},
+            onclick="editarModulo(${id},
               '${escapeJS(nombre)}',
               '${escapeJS(archivo)}',
               '${escapeJS(icono)}',
               '${escapeJS(permiso)}',
-              '${activo}'
-            )">
+              '${activo}')">
             Editar
           </button>
           <button class="btn-danger"
@@ -140,25 +113,20 @@ function renderModulos(){
         </td>
       </tr>`;
 
-    /* ===== TARJETA MÓVIL ===== */
     modulosCards.innerHTML += `
       <div class="modulo-card">
-        <span class="modulo-badge ${activo==='SI'?'activo':'inactivo'}">
-          ${activo}
-        </span>
+        <span class="modulo-badge ${activo==='SI'?'activo':'inactivo'}">${activo}</span>
         <h4>${icono} ${nombre}</h4>
         <p><b>Archivo:</b> ${archivo}</p>
         <p><b>Permiso:</b> ${permiso}</p>
         <div class="modulo-actions">
           <button class="btn-edit"
-            onclick="editarModulo(
-              ${id},
+            onclick="editarModulo(${id},
               '${escapeJS(nombre)}',
               '${escapeJS(archivo)}',
               '${escapeJS(icono)}',
               '${escapeJS(permiso)}',
-              '${activo}'
-            )">
+              '${activo}')">
             Editar
           </button>
           <button class="btn-danger"
@@ -189,18 +157,7 @@ function editarModulo(id,nombre,archivo,icono,permiso,activo){
 }
 
 /* ======================================================
-   LIMPIAR
-====================================================== */
-function limpiarModulo(){
-  m_nombre.value  = "";
-  m_archivo.value = "";
-  m_icono.value   = "";
-  m_permiso.value = "";
-  m_activo.value  = "SI";
-}
-
-/* ======================================================
-   GUARDAR
+   GUARDAR (FormData REAL)
 ====================================================== */
 async function guardarModulo(){
 
@@ -209,30 +166,19 @@ async function guardarModulo(){
     return;
   }
 
-  const payload = {
-    action : MODO_MODULO === "editar" ? "editarModulo" : "crearModulo",
-    id     : MODULO_ID,
-    nombre : m_nombre.value,
-    archivo: m_archivo.value,
-    icono  : m_icono.value,
-    permiso: m_permiso.value,
-    activo : m_activo.value
-  };
+  const fd = new FormData();
+  fd.append("action", MODO_MODULO === "editar" ? "editarModulo" : "crearModulo");
+  fd.append("id", MODULO_ID || "");
+  fd.append("nombre", m_nombre.value);
+  fd.append("archivo", m_archivo.value);
+  fd.append("icono", m_icono.value);
+  fd.append("permiso", m_permiso.value);
+  fd.append("activo", m_activo.value);
 
-  try{
-    await fetch(API_MODULOS,{
-      method:"POST",
-      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
-      body: JSON.stringify(payload)
-    });
+  await fetch(API_MODULOS,{ method:"POST", body:fd });
 
-    cerrarModulo();
-    cargarModulos();
-
-  }catch(e){
-    console.error(e);
-    alert("Error al guardar módulo");
-  }
+  cerrarModulo();
+  cargarModulos();
 }
 
 /* ======================================================
@@ -242,29 +188,19 @@ async function eliminarModulo(id){
 
   if(!confirm("¿Eliminar módulo?")) return;
 
-  try{
-    await fetch(API_MODULOS,{
-      method:"POST",
-      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
-      body: JSON.stringify({
-        action:"eliminarModulo",
-        id
-      })
-    });
+  const fd = new FormData();
+  fd.append("action","eliminarModulo");
+  fd.append("id",id);
 
-    cargarModulos();
-
-  }catch(e){
-    console.error(e);
-    alert("Error al eliminar módulo");
-  }
+  await fetch(API_MODULOS,{ method:"POST", body:fd });
+  cargarModulos();
 }
 
 /* ======================================================
    UTIL
 ====================================================== */
-function escapeJS(text){
-  return String(text || "")
+function escapeJS(t){
+  return String(t||"")
     .replace(/\\/g,"\\\\")
     .replace(/'/g,"\\'")
     .replace(/"/g,'\\"')
