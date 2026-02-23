@@ -478,32 +478,45 @@ const u_rol    = document.getElementById("u_rol");
 const u_activo = document.getElementById("u_activo");
 const btnGuardar = document.getElementById("btnGuardar");
 
-/* ================= CARGAR ================= */
-async function cargarUsuarios(){
+/* ================= AUTO CARGA ================= */
+document.addEventListener("DOMContentLoaded", () => {
+  cargarUsuarios();
+});
+
+/* ================= CARGAR USUARIOS ================= */
+async function cargarUsuarios() {
   btnLoad.classList.add("loading");
   btnLoad.innerHTML = `<div class="loader"></div> Cargando`;
 
-  const r = await fetch(API + "?action=listarUsuarios");
-  const d = await r.json();
-  usuarios = d.data || [];
-  render(usuarios);
+  try {
+    const r = await fetch(API + "?action=listarUsuarios");
+    const d = await r.json();
+
+    usuarios = Array.isArray(d.data) ? d.data : [];
+    render(usuarios);
+
+  } catch (e) {
+    tablaUsuarios.innerHTML =
+      `<tr><td colspan="6">Error al cargar usuarios</td></tr>`;
+    console.error(e);
+  }
 
   btnLoad.classList.remove("loading");
   btnLoad.innerHTML = "Cargar usuarios";
 }
 
 /* ================= RENDER ================= */
-function render(data){
+function render(data) {
   tablaUsuarios.innerHTML = "";
   mobileList.innerHTML = "";
 
-  if(!data.length){
+  if (!data.length) {
     tablaUsuarios.innerHTML =
       `<tr><td colspan="6">Sin usuarios</td></tr>`;
     return;
   }
 
-  data.forEach(u=>{
+  data.forEach(u => {
     const permisos = u[6] || "";
 
     tablaUsuarios.innerHTML += `
@@ -545,7 +558,7 @@ function render(data){
 }
 
 /* ================= FILTRO ================= */
-function filtrar(){
+function filtrar() {
   const q = busqueda.value.toLowerCase();
   render(
     usuarios.filter(u =>
@@ -556,8 +569,8 @@ function filtrar(){
   );
 }
 
-/* ================= USUARIOS ================= */
-function abrirCrear(){
+/* ================= MODAL ================= */
+function abrirCrear() {
   modo = "crear";
   tituloUsuario.innerText = "Crear Usuario";
   u_user.disabled = false;
@@ -565,7 +578,7 @@ function abrirCrear(){
   modalUsuario.style.display = "flex";
 }
 
-function editar(u,p,n,r,a,per){
+function editar(u, p, n, r, a, per) {
   modo = "editar";
   tituloUsuario.innerText = "Editar Usuario";
 
@@ -582,29 +595,30 @@ function editar(u,p,n,r,a,per){
   modalUsuario.style.display = "flex";
 }
 
-function cerrarUsuario(){
+function cerrarUsuario() {
   modalUsuario.style.display = "none";
 }
 
-function limpiar(){
+function limpiar() {
   u_user.value = "";
   u_pass.value = "";
   u_nombre.value = "";
   u_rol.value = "ADMIN";
   u_activo.value = "SI";
+
   document.querySelectorAll(".permissions input")
     .forEach(c => c.checked = false);
 }
 
-/* ================= GUARDAR (FormData) ================= */
-async function guardarUsuario(){
+/* ================= GUARDAR ================= */
+async function guardarUsuario() {
 
   const permisos = [...document.querySelectorAll(".permissions input:checked")]
     .map(c => c.value)
     .join(",");
 
   const fd = new FormData();
-  fd.append("action", modo==="crear" ? "crearUsuario" : "editarUsuario");
+  fd.append("action", modo === "crear" ? "crearUsuario" : "editarUsuario");
   fd.append("username", u_user.value);
   fd.append("password", u_pass.value);
   fd.append("nombre", u_nombre.value);
@@ -612,21 +626,21 @@ async function guardarUsuario(){
   fd.append("activo", u_activo.value);
   fd.append("permisos", permisos);
 
-  await fetch(API, { method:"POST", body:fd });
+  await fetch(API, { method: "POST", body: fd });
 
   cerrarUsuario();
   cargarUsuarios();
 }
 
 /* ================= ELIMINAR ================= */
-async function eliminarUsuario(u){
-  if(!confirm("Eliminar "+u+"?")) return;
+async function eliminarUsuario(u) {
+  if (!confirm("Eliminar " + u + "?")) return;
 
   const fd = new FormData();
-  fd.append("action","eliminarUsuario");
-  fd.append("username",u);
+  fd.append("action", "eliminarUsuario");
+  fd.append("username", u);
 
-  await fetch(API, { method:"POST", body:fd });
+  await fetch(API, { method: "POST", body: fd });
   cargarUsuarios();
 }
 </script>
