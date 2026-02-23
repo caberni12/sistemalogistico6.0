@@ -1,141 +1,113 @@
 /* ======================================================
-   MODULOS.JS – CRUD POR ID (MODAL + TABLA + TARJETAS)
-   FUNCIONAL CON GOOGLE APPS SCRIPT (POST CLÁSICO)
+   CONFIG
 ====================================================== */
-
-/* ================= CONFIG ================= */
-const API_MODULOS =
+const API =
   "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
-/* ================= ESTADO ================= */
-let MODULOS = [];
-let MODO_MODULO = "crear"; // crear | editar
-let MODULO_ID = null;
+/* ======================================================
+   DOM
+====================================================== */
+const btnLoad        = document.getElementById("btnLoad");
+const tablaUsuarios  = document.getElementById("tablaUsuarios");
+const mobileList     = document.getElementById("mobileList");
+const busqueda       = document.getElementById("busqueda");
 
-/* ================= DOM ================= */
-let modalModulo,
-    modalListaModulos,
-    tablaModulos,
-    m_nombre,
-    m_archivo,
-    m_icono,
-    m_permiso,
-    m_activo;
+const modalUsuario   = document.getElementById("modalUsuario");
+const tituloUsuario  = document.getElementById("tituloUsuario");
+
+const u_user   = document.getElementById("u_user");
+const u_pass   = document.getElementById("u_pass");
+const u_nombre = document.getElementById("u_nombre");
+const u_rol    = document.getElementById("u_rol");
+const u_activo = document.getElementById("u_activo");
+
+const btnGuardar = document.getElementById("btnGuardar");
 
 /* ======================================================
-   INIT
+   ESTADO
 ====================================================== */
-document.addEventListener("DOMContentLoaded", () => {
-
-  modalModulo       = document.getElementById("modalModulo");
-  modalListaModulos = document.getElementById("modalListaModulos");
-  tablaModulos      = document.getElementById("tablaModulos");
-
-  m_nombre  = document.getElementById("m_nombre");
-  m_archivo = document.getElementById("m_archivo");
-  m_icono   = document.getElementById("m_icono");
-  m_permiso = document.getElementById("m_permiso");
-  m_activo  = document.getElementById("m_activo");
-
-});
+let usuarios = [];
+let modo = "crear";
 
 /* ======================================================
-   MODALES
+   AUTO CARGA AL INICIAR
 ====================================================== */
-function abrirCrearModulo(){
-  MODO_MODULO = "crear";
-  MODULO_ID = null;
-  limpiarModulo();
-  modalModulo.style.display = "flex";
-}
-
-function cerrarModulo(){
-  modalModulo.style.display = "none";
-}
-
-function abrirListaModulos(){
-  modalListaModulos.style.display = "flex";
-  cargarModulos();
-}
-
-function cerrarListaModulos(){
-  modalListaModulos.style.display = "none";
-}
+document.addEventListener("DOMContentLoaded", cargarUsuarios);
 
 /* ======================================================
-   CARGAR MODULOS
+   CARGAR USUARIOS
 ====================================================== */
-async function cargarModulos(){
+async function cargarUsuarios() {
+  btnLoad.classList.add("loading");
+  btnLoad.innerHTML = `<div class="loader"></div> Cargando`;
 
-  tablaModulos.innerHTML =
-    `<tr><td colspan="5">Cargando…</td></tr>`;
+  try {
+    const r = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({ action: "listarUsuarios" }),
+    });
 
-  try{
-    const r = await fetch(API_MODULOS + "?action=listarModulos");
-    const d = await r.json();
+    const res = await r.json();
+    usuarios = res.data || [];
+    render(usuarios);
 
-    MODULOS = d.data || [];
-    renderModulos();
-
-  }catch(e){
-    console.error(e);
-    tablaModulos.innerHTML =
-      `<tr><td colspan="5">Error al cargar</td></tr>`;
+  } catch (e) {
+    console.error("Error al cargar usuarios:", e);
+    tablaUsuarios.innerHTML =
+      `<tr><td colspan="6">Error al cargar datos</td></tr>`;
   }
+
+  btnLoad.classList.remove("loading");
+  btnLoad.innerHTML = "Recargar usuarios";
 }
 
 /* ======================================================
-   RENDER TABLA + TARJETAS
+   RENDER
 ====================================================== */
-function renderModulos(){
+function render(data) {
+  tablaUsuarios.innerHTML = "";
+  mobileList.innerHTML = "";
 
-  const cards = document.getElementById("modulosCards");
-  tablaModulos.innerHTML = "";
-  cards.innerHTML = "";
-
-  if(!MODULOS.length){
-    tablaModulos.innerHTML =
-      `<tr><td colspan="5">Sin módulos</td></tr>`;
-    cards.innerHTML =
-      `<p style="text-align:center">Sin módulos</p>`;
+  if (!data.length) {
+    tablaUsuarios.innerHTML =
+      `<tr><td colspan="6">Sin registros</td></tr>`;
     return;
   }
 
-  MODULOS.forEach(m => {
-
-    tablaModulos.innerHTML += `
+  data.forEach(u => {
+    tablaUsuarios.innerHTML += `
       <tr>
-        <td>${m[1]}</td>
-        <td>${m[2]}</td>
-        <td>${m[4]}</td>
-        <td>${m[5]}</td>
+        <td>${u[1]}</td>
+        <td>${u[2]}</td>
+        <td>${u[3]}</td>
+        <td>${u[4]}</td>
+        <td>${u[5]}</td>
         <td>
           <button class="btn-edit"
-            onclick="editarModulo(${m[0]},'${escapeJS(m[1])}','${escapeJS(m[2])}','${escapeJS(m[3])}','${escapeJS(m[4])}','${m[5]}')">
+            onclick="editar('${u[1]}','${u[2]}','${u[3]}','${u[4]}','${u[5]}','${u[6] || ""}')">
             Editar
           </button>
           <button class="btn-danger"
-            onclick="eliminarModulo(${m[0]})">
+            onclick="eliminarUsuario('${u[1]}')">
             Eliminar
           </button>
         </td>
       </tr>`;
 
-    cards.innerHTML += `
-      <div class="modulo-card">
-        <span class="modulo-badge ${m[5]==='SI'?'activo':'inactivo'}">
-          ${m[5]}
-        </span>
-        <h4>${m[3] || "📦"} ${m[1]}</h4>
-        <p><b>Archivo:</b> ${m[2]}</p>
-        <p><b>Permiso:</b> ${m[4]}</p>
-        <div class="modulo-actions">
+    mobileList.innerHTML += `
+      <div class="mobile-card">
+        <h4>${u[3]}</h4>
+        <p><b>Usuario:</b> ${u[1]}</p>
+        <p><b>Contraseña:</b> ${u[2]}</p>
+        <p><b>Rol:</b> ${u[4]}</p>
+        <div class="mobile-actions">
           <button class="btn-edit"
-            onclick="editarModulo(${m[0]},'${escapeJS(m[1])}','${escapeJS(m[2])}','${escapeJS(m[3])}','${escapeJS(m[4])}','${m[5]}')">
+            onclick="editar('${u[1]}','${u[2]}','${u[3]}','${u[4]}','${u[5]}','${u[6] || ""}')">
             Editar
           </button>
           <button class="btn-danger"
-            onclick="eliminarModulo(${m[0]})">
+            onclick="eliminarUsuario('${u[1]}')">
             Eliminar
           </button>
         </div>
@@ -144,90 +116,125 @@ function renderModulos(){
 }
 
 /* ======================================================
-   EDITAR
+   FILTRO
 ====================================================== */
-function editarModulo(id,nombre,archivo,icono,permiso,activo){
-
-  MODO_MODULO = "editar";
-  MODULO_ID = id;
-
-  cerrarListaModulos();
-  modalModulo.style.display = "flex";
-
-  m_nombre.value  = nombre;
-  m_archivo.value = archivo;
-  m_icono.value   = icono;
-  m_permiso.value = permiso;
-  m_activo.value  = activo;
+function filtrar() {
+  const q = busqueda.value.toLowerCase();
+  render(
+    usuarios.filter(u =>
+      u[1].toLowerCase().includes(q) ||
+      u[3].toLowerCase().includes(q) ||
+      u[4].toLowerCase().includes(q)
+    )
+  );
 }
 
 /* ======================================================
-   LIMPIAR
+   MODAL USUARIO
 ====================================================== */
-function limpiarModulo(){
-  m_nombre.value  = "";
-  m_archivo.value = "";
-  m_icono.value   = "";
-  m_permiso.value = "";
-  m_activo.value  = "SI";
+function abrirCrear() {
+  modo = "crear";
+  tituloUsuario.innerText = "Crear Usuario";
+  u_user.disabled = false;
+  limpiar();
+  modalUsuario.style.display = "flex";
+}
+
+function editar(u, p, n, r, a, per) {
+  modo = "editar";
+  tituloUsuario.innerText = "Editar Usuario";
+
+  u_user.value = u;
+  u_user.disabled = true;
+  u_pass.value = p;
+  u_nombre.value = n;
+  u_rol.value = r;
+  u_activo.value = a;
+
+  document
+    .querySelectorAll(".permissions input")
+    .forEach(c => c.checked = (per || "").includes(c.value));
+
+  modalUsuario.style.display = "flex";
+}
+
+function cerrarUsuario() {
+  modalUsuario.style.display = "none";
+}
+
+function limpiar() {
+  u_user.value = "";
+  u_pass.value = "";
+  u_nombre.value = "";
+  u_rol.value = "ADMIN";
+  u_activo.value = "SI";
+  document
+    .querySelectorAll(".permissions input")
+    .forEach(c => c.checked = false);
 }
 
 /* ======================================================
-   GUARDAR (CREAR / EDITAR)
+   GUARDAR
 ====================================================== */
-async function guardarModulo(){
+async function guardarUsuario() {
 
-  if(!m_nombre.value || !m_archivo.value || !m_permiso.value){
-    alert("Complete los campos obligatorios");
+  if (!u_user.value || !u_pass.value || !u_nombre.value) {
+    alert("Complete todos los campos");
     return;
   }
 
-  const fd = new FormData();
-  fd.append("action", MODO_MODULO === "editar" ? "editarModulo" : "crearModulo");
-  fd.append("id", MODULO_ID || "");
-  fd.append("nombre", m_nombre.value);
-  fd.append("archivo", m_archivo.value);
-  fd.append("icono", m_icono.value);
-  fd.append("permiso", m_permiso.value);
-  fd.append("activo", m_activo.value);
+  btnGuardar.classList.add("loading");
+  btnGuardar.innerHTML = `<div class="loader"></div> Guardando`;
 
-  try{
-    await fetch(API_MODULOS, { method:"POST", body:fd });
-    cerrarModulo();
-    cargarModulos();
-  }catch(e){
-    console.error(e);
-    alert("Error al guardar módulo");
+  const permisos = [...document.querySelectorAll(".permissions input:checked")]
+    .map(c => c.value)
+    .join(",");
+
+  try {
+    await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type":"text/plain;charset=UTF-8" },
+      body: JSON.stringify({
+        action: modo === "crear" ? "crearUsuario" : "editarUsuario",
+        username: u_user.value,
+        password: u_pass.value,
+        nombre: u_nombre.value,
+        rol: u_rol.value,
+        activo: u_activo.value,
+        permisos
+      })
+    });
+
+    cerrarUsuario();
+    cargarUsuarios();
+
+  } catch (e) {
+    console.error("Error al guardar:", e);
   }
+
+  btnGuardar.classList.remove("loading");
+  btnGuardar.innerHTML = "Guardar";
 }
 
 /* ======================================================
    ELIMINAR
 ====================================================== */
-async function eliminarModulo(id){
+async function eliminarUsuario(u) {
+  if (!confirm("Eliminar " + u + "?")) return;
 
-  if(!confirm("¿Eliminar módulo?")) return;
+  try {
+    await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type":"text/plain;charset=UTF-8" },
+      body: JSON.stringify({
+        action: "eliminarUsuario",
+        username: u
+      })
+    });
 
-  const fd = new FormData();
-  fd.append("action","eliminarModulo");
-  fd.append("id",id);
+    cargarUsuarios();
 
-  try{
-    await fetch(API_MODULOS,{ method:"POST", body:fd });
-    cargarModulos();
-  }catch(e){
-    console.error(e);
-    alert("Error al eliminar módulo");
+  } catch (e) {
+    console.error("Error al eliminar:", e);
   }
-}
-
-/* ======================================================
-   UTIL
-====================================================== */
-function escapeJS(text){
-  return String(text)
-    .replace(/\\/g,"\\\\")
-    .replace(/'/g,"\\'")
-    .replace(/"/g,'\\"')
-    .replace(/\n/g," ");
 }
