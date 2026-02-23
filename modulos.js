@@ -1,11 +1,11 @@
 /* ======================================================
    MODULOS.JS – CRUD POR ID (MODAL + TABLA + TARJETAS MÓVIL)
+   VERSION FINAL FUNCIONAL (CREAR / EDITAR / ELIMINAR)
 ====================================================== */
 
 /* ================= CONFIG ================= */
 const API_MODULOS =
   "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
-
 
 /* ================= ESTADO ================= */
 let MODULOS = [];
@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ======================================================
-   ABRIR / CERRAR MODALES
+   MODALES
 ====================================================== */
 function abrirCrearModulo(){
   MODO_MODULO = "crear";
@@ -85,7 +85,7 @@ async function cargarModulos(){
 }
 
 /* ======================================================
-   RENDER TABLA (WEB) + TARJETAS (MÓVIL)
+   RENDER TABLA + TARJETAS
 ====================================================== */
 function renderModulos(){
 
@@ -104,7 +104,7 @@ function renderModulos(){
 
   MODULOS.forEach(m => {
 
-    /* ===== TABLA WEB ===== */
+    /* ===== TABLA ===== */
     tablaModulos.innerHTML += `
       <tr>
         <td>${m[1]}</td>
@@ -120,9 +120,8 @@ function renderModulos(){
               '${escapeJS(m[3])}',
               '${escapeJS(m[4])}',
               '${m[5]}'
-            )">
-            Editar
-          </button>
+            )">Editar</button>
+
           <button class="btn-danger"
             onclick="eliminarModulo(${m[0]})">
             Eliminar
@@ -131,7 +130,7 @@ function renderModulos(){
       </tr>
     `;
 
-    /* ===== TARJETA MÓVIL ===== */
+    /* ===== CARD MÓVIL ===== */
     cards.innerHTML += `
       <div class="modulo-card">
         <span class="modulo-badge ${m[5]==='SI'?'activo':'inactivo'}">
@@ -152,9 +151,8 @@ function renderModulos(){
               '${escapeJS(m[3])}',
               '${escapeJS(m[4])}',
               '${m[5]}'
-            )">
-            Editar
-          </button>
+            )">Editar</button>
+
           <button class="btn-danger"
             onclick="eliminarModulo(${m[0]})">
             Eliminar
@@ -184,7 +182,7 @@ function editarModulo(id,nombre,archivo,icono,permiso,activo){
 }
 
 /* ======================================================
-   LIMPIAR FORM
+   LIMPIAR
 ====================================================== */
 function limpiarModulo(){
   m_nombre.value  = "";
@@ -195,14 +193,12 @@ function limpiarModulo(){
 }
 
 /* ======================================================
-   GUARDAR (CREAR / EDITAR)
+   GUARDAR (CREAR / EDITAR) – FIX GAS
 ====================================================== */
 async function guardarModulo(){
 
   const payload = {
-    action : MODO_MODULO === "editar"
-              ? "editarModulo"
-              : "crearModulo",
+    action  : MODO_MODULO === "editar" ? "editarModulo" : "crearModulo",
     id      : MODULO_ID,
     nombre  : m_nombre.value.trim(),
     archivo : m_archivo.value.trim(),
@@ -217,48 +213,60 @@ async function guardarModulo(){
   }
 
   try{
-    await fetch(API_MODULOS,{
+    const r = await fetch(API_MODULOS,{
       method  : "POST",
-      headers : { "Content-Type":"text/plain" },
+      headers : { "Content-Type":"application/json" },
       body    : JSON.stringify(payload)
     });
+
+    const res = await r.json();
+
+    if(res.status !== "ok"){
+      throw new Error(res.message || "Error");
+    }
 
     cerrarModulo();
     cargarModulos();
 
   }catch(e){
-    alert("Error al guardar");
+    alert("Error al guardar módulo");
     console.error(e);
   }
 }
 
 /* ======================================================
-   ELIMINAR
+   ELIMINAR – FIX GAS
 ====================================================== */
 async function eliminarModulo(id){
 
   if(!confirm("¿Eliminar módulo?")) return;
 
   try{
-    await fetch(API_MODULOS,{
+    const r = await fetch(API_MODULOS,{
       method  : "POST",
-      headers : { "Content-Type":"text/plain" },
+      headers : { "Content-Type":"application/json" },
       body    : JSON.stringify({
-        action:"eliminarModulo",
-        id
+        action : "eliminarModulo",
+        id     : id
       })
     });
+
+    const res = await r.json();
+
+    if(res.status !== "ok"){
+      throw new Error(res.message || "Error");
+    }
 
     cargarModulos();
 
   }catch(e){
-    alert("Error al eliminar");
+    alert("Error al eliminar módulo");
     console.error(e);
   }
 }
 
 /* ======================================================
-   UTIL – ESCAPE STRINGS PARA onclick
+   UTIL
 ====================================================== */
 function escapeJS(text){
   return String(text)
