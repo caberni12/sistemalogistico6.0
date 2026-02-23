@@ -1,33 +1,29 @@
 /* ======================================================
-   CONFIG
+   USUARIOS.JS – FUNCIONAL REAL (Apps Script clásico)
 ====================================================== */
+
 const API =
   "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
-/* ======================================================
-   DOM
-====================================================== */
-const btnLoad        = document.getElementById("btnLoad");
-const tablaUsuarios  = document.getElementById("tablaUsuarios");
-const mobileList     = document.getElementById("mobileList");
-const busqueda       = document.getElementById("busqueda");
+/* ================= DOM ================= */
+const btnLoad       = document.getElementById("btnLoad");
+const tablaUsuarios = document.getElementById("tablaUsuarios");
+const mobileList    = document.getElementById("mobileList");
+const busqueda      = document.getElementById("busqueda");
 
-const modalUsuario   = document.getElementById("modalUsuario");
-const tituloUsuario  = document.getElementById("tituloUsuario");
+const modalUsuario  = document.getElementById("modalUsuario");
+const tituloUsuario = document.getElementById("tituloUsuario");
 
 const u_user   = document.getElementById("u_user");
 const u_pass   = document.getElementById("u_pass");
 const u_nombre = document.getElementById("u_nombre");
 const u_rol    = document.getElementById("u_rol");
 const u_activo = document.getElementById("u_activo");
-
 const btnGuardar = document.getElementById("btnGuardar");
 
-/* ======================================================
-   ESTADO
-====================================================== */
-let usuarios = [];
-let modo = "crear";
+/* ================= ESTADO ================= */
+let USUARIOS = [];
+let MODO = "crear";
 
 /* ======================================================
    AUTO LOAD
@@ -35,69 +31,71 @@ let modo = "crear";
 document.addEventListener("DOMContentLoaded", cargarUsuarios);
 
 /* ======================================================
-   CARGAR USUARIOS
+   CARGAR USUARIOS (GET REAL)
 ====================================================== */
-async function cargarUsuarios() {
-  btnLoad.classList.add("loading");
-  btnLoad.innerHTML = `<div class="loader"></div> Cargando`;
+async function cargarUsuarios(){
 
-  try {
-    const r = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=UTF-8" },
-      body: JSON.stringify({ action: "listarUsuarios" })
-    });
+  tablaUsuarios.innerHTML =
+    `<tr><td colspan="6">Cargando…</td></tr>`;
+  mobileList.innerHTML = "";
 
-    const res = await r.json();
-    usuarios = res.data || [];
-    render(usuarios);
+  try{
+    const r = await fetch(API + "?action=listarUsuarios");
+    const d = await r.json();
 
-  } catch (err) {
-    console.error(err);
+    USUARIOS = d.data || [];
+    renderUsuarios(USUARIOS);
+
+  }catch(e){
+    console.error(e);
     tablaUsuarios.innerHTML =
       `<tr><td colspan="6">Error al cargar usuarios</td></tr>`;
   }
-
-  btnLoad.classList.remove("loading");
-  btnLoad.innerHTML = "Recargar usuarios";
 }
 
 /* ======================================================
-   RENDER WEB + MÓVIL
+   RENDER
 ====================================================== */
-function render(data) {
+function renderUsuarios(data){
+
   tablaUsuarios.innerHTML = "";
   mobileList.innerHTML = "";
 
-  if (!data.length) {
+  if(!data.length){
     tablaUsuarios.innerHTML =
-      `<tr><td colspan="6">Sin registros</td></tr>`;
+      `<tr><td colspan="6">Sin usuarios</td></tr>`;
     return;
   }
 
   data.forEach(u => {
-    const usuario   = u[1];
-    const pass      = u[2];
-    const nombre    = u[3];
-    const rol       = u[4];
-    const activo    = u[5];
-    const permisos  = u[6] || "";
 
-    /* ===== WEB ===== */
+    const user     = u[1];
+    const pass     = u[2];
+    const nombre   = u[3];
+    const rol      = u[4];
+    const activo   = u[5];
+    const permisos = u[6] || "";
+
+    /* ===== TABLA ===== */
     tablaUsuarios.innerHTML += `
       <tr>
-        <td>${usuario}</td>
+        <td>${user}</td>
         <td>${pass}</td>
         <td>${nombre}</td>
         <td>${rol}</td>
         <td>${activo}</td>
         <td>
           <button class="btn-edit"
-            onclick="editarUsuario('${usuario}','${pass}','${nombre}','${rol}','${activo}','${permisos}')">
-            Editar
-          </button>
+            onclick="editarUsuario(
+              '${escapeJS(user)}',
+              '${escapeJS(pass)}',
+              '${escapeJS(nombre)}',
+              '${escapeJS(rol)}',
+              '${activo}',
+              '${escapeJS(permisos)}'
+            )">Editar</button>
           <button class="btn-danger"
-            onclick="eliminarUsuario('${usuario}')">
+            onclick="eliminarUsuario('${escapeJS(user)}')">
             Eliminar
           </button>
         </td>
@@ -107,16 +105,21 @@ function render(data) {
     mobileList.innerHTML += `
       <div class="mobile-card">
         <h4>${nombre}</h4>
-        <p><b>Usuario:</b> ${usuario}</p>
+        <p><b>Usuario:</b> ${user}</p>
         <p><b>Rol:</b> ${rol}</p>
         <p><b>Activo:</b> ${activo}</p>
         <div class="mobile-actions">
           <button class="btn-edit"
-            onclick="editarUsuario('${usuario}','${pass}','${nombre}','${rol}','${activo}','${permisos}')">
-            Editar
-          </button>
+            onclick="editarUsuario(
+              '${escapeJS(user)}',
+              '${escapeJS(pass)}',
+              '${escapeJS(nombre)}',
+              '${escapeJS(rol)}',
+              '${activo}',
+              '${escapeJS(permisos)}'
+            )">Editar</button>
           <button class="btn-danger"
-            onclick="eliminarUsuario('${usuario}')">
+            onclick="eliminarUsuario('${escapeJS(user)}')">
             Eliminar
           </button>
         </div>
@@ -127,50 +130,51 @@ function render(data) {
 /* ======================================================
    FILTRO
 ====================================================== */
-function filtrar() {
+function filtrar(){
   const q = busqueda.value.toLowerCase();
-  render(
-    usuarios.filter(u =>
-      (u[1] || "").toLowerCase().includes(q) ||
-      (u[3] || "").toLowerCase().includes(q) ||
-      (u[4] || "").toLowerCase().includes(q)
+  renderUsuarios(
+    USUARIOS.filter(u =>
+      (u[1]||"").toLowerCase().includes(q) ||
+      (u[3]||"").toLowerCase().includes(q) ||
+      (u[4]||"").toLowerCase().includes(q)
     )
   );
 }
 
 /* ======================================================
-   MODAL USUARIO
+   MODAL
 ====================================================== */
-function abrirCrear() {
-  modo = "crear";
+function abrirCrear(){
+  MODO = "crear";
   tituloUsuario.innerText = "Crear Usuario";
   u_user.disabled = false;
-  limpiar();
+  limpiarUsuario();
   modalUsuario.style.display = "flex";
 }
 
-function editarUsuario(u, p, n, r, a, per) {
-  modo = "editar";
+function editarUsuario(u,p,n,r,a,per){
+
+  MODO = "editar";
   tituloUsuario.innerText = "Editar Usuario";
 
-  u_user.value   = u;
-  u_pass.value   = p;
+  u_user.value = u;
+  u_pass.value = p;
   u_nombre.value = n;
-  u_rol.value    = r;
+  u_rol.value = r;
   u_activo.value = a;
   u_user.disabled = true;
 
   document.querySelectorAll(".permissions input")
-    .forEach(c => c.checked = (per || "").split(",").includes(c.value));
+    .forEach(c => c.checked = per.split(",").includes(c.value));
 
   modalUsuario.style.display = "flex";
 }
 
-function cerrarUsuario() {
+function cerrarUsuario(){
   modalUsuario.style.display = "none";
 }
 
-function limpiar() {
+function limpiarUsuario(){
   u_user.value = "";
   u_pass.value = "";
   u_nombre.value = "";
@@ -181,66 +185,56 @@ function limpiar() {
 }
 
 /* ======================================================
-   GUARDAR
+   GUARDAR (FormData)
 ====================================================== */
-async function guardarUsuario() {
-  if (!u_user.value || !u_pass.value || !u_nombre.value) {
+async function guardarUsuario(){
+
+  if(!u_user.value || !u_pass.value || !u_nombre.value){
     alert("Complete todos los campos");
     return;
   }
-
-  btnGuardar.classList.add("loading");
-  btnGuardar.innerHTML = `<div class="loader"></div> Guardando`;
 
   const permisos = [...document.querySelectorAll(".permissions input:checked")]
     .map(c => c.value)
     .join(",");
 
-  try {
-    await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type":"text/plain;charset=UTF-8" },
-      body: JSON.stringify({
-        action: modo === "crear" ? "crearUsuario" : "editarUsuario",
-        username: u_user.value,
-        password: u_pass.value,
-        nombre: u_nombre.value,
-        rol: u_rol.value,
-        activo: u_activo.value,
-        permisos
-      })
-    });
+  const fd = new FormData();
+  fd.append("action", MODO === "crear" ? "crearUsuario" : "editarUsuario");
+  fd.append("username", u_user.value);
+  fd.append("password", u_pass.value);
+  fd.append("nombre", u_nombre.value);
+  fd.append("rol", u_rol.value);
+  fd.append("activo", u_activo.value);
+  fd.append("permisos", permisos);
 
-    cerrarUsuario();
-    cargarUsuarios();
+  await fetch(API,{ method:"POST", body:fd });
 
-  } catch (err) {
-    console.error(err);
-  }
-
-  btnGuardar.classList.remove("loading");
-  btnGuardar.innerHTML = "Guardar";
+  cerrarUsuario();
+  cargarUsuarios();
 }
 
 /* ======================================================
    ELIMINAR
 ====================================================== */
-async function eliminarUsuario(user) {
-  if (!confirm(`Eliminar usuario ${user}?`)) return;
+async function eliminarUsuario(user){
 
-  try {
-    await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type":"text/plain;charset=UTF-8" },
-      body: JSON.stringify({
-        action: "eliminarUsuario",
-        username: user
-      })
-    });
+  if(!confirm("Eliminar usuario " + user + "?")) return;
 
-    cargarUsuarios();
+  const fd = new FormData();
+  fd.append("action","eliminarUsuario");
+  fd.append("username",user);
 
-  } catch (err) {
-    console.error(err);
-  }
+  await fetch(API,{ method:"POST", body:fd });
+  cargarUsuarios();
+}
+
+/* ======================================================
+   UTIL
+====================================================== */
+function escapeJS(t){
+  return String(t||"")
+    .replace(/\\/g,"\\\\")
+    .replace(/'/g,"\\'")
+    .replace(/"/g,'\\"')
+    .replace(/\n/g," ");
 }
