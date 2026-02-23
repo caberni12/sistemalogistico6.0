@@ -457,10 +457,9 @@ input,select{
 
 <script>
 /* ======================================================
-   USUARIOS – JS FINAL DEFINITIVO
+   USUARIOS – COMPATIBLE CON TU APPS SCRIPT
 ====================================================== */
 
-/* ================= CONFIG ================= */
 const API =
 "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
@@ -492,7 +491,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ======================================================
-   CARGAR USUARIOS (POST + usuario)
+   CARGAR USUARIOS (POST + JSON + TOKEN)
 ====================================================== */
 async function cargarUsuarios(){
 
@@ -500,41 +499,28 @@ async function cargarUsuarios(){
   btnLoad.innerHTML = `<div class="loader"></div> Cargando`;
 
   try {
-    const usuarioLogin = localStorage.getItem("usuario") || "";
-
-    const fd = new FormData();
-    fd.append("action", "listarUsuarios");
-    fd.append("usuario", usuarioLogin); // 🔑 OBLIGATORIO PARA TU BACKEND
+    const token = localStorage.getItem("token");
+    if (!token) throw "Token no encontrado";
 
     const r = await fetch(API, {
       method: "POST",
-      body: fd
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "listarUsuarios",
+        token: token
+      })
     });
 
-    const text = await r.text();
-    console.log("RAW listarUsuarios:", text);
+    const res = await r.json();
+    console.log("RESPUESTA listarUsuarios:", res);
 
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      parsed = {};
-    }
+    if (!res.ok) throw res.msg || "Error backend";
 
-    if (Array.isArray(parsed.data)) {
-      usuarios = parsed.data;
-    } else if (Array.isArray(parsed.usuarios)) {
-      usuarios = parsed.usuarios;
-    } else if (Array.isArray(parsed)) {
-      usuarios = parsed;
-    } else {
-      usuarios = [];
-    }
-
+    usuarios = Array.isArray(res.data) ? res.data : [];
     renderUsuarios(usuarios);
 
   } catch (e) {
-    console.error("ERROR cargarUsuarios:", e);
+    console.error("ERROR:", e);
     tablaUsuarios.innerHTML =
       `<tr><td colspan="6">Error al cargar usuarios</td></tr>`;
   }
@@ -558,15 +544,14 @@ function renderUsuarios(data){
   }
 
   data.forEach(u => {
-    // Formato esperado:
-    // [fecha, usuario, password, nombre, rol, activo, permisos]
+    // [ID, USERNAME, PASSWORD, NOMBRE, ROL, ACTIVO, PERMISOS]
 
-    const usuario  = u[1] ?? "";
-    const pass     = u[2] ?? "";
-    const nombre   = u[3] ?? "";
-    const rol      = u[4] ?? "";
-    const activo   = u[5] ?? "";
-    const permisos = u[6] ?? "";
+    const usuario  = u[1];
+    const pass     = u[2];
+    const nombre   = u[3];
+    const rol      = u[4];
+    const activo   = u[5];
+    const permisos = u[6] || "";
 
     tablaUsuarios.innerHTML += `
       <tr>
@@ -613,15 +598,15 @@ function filtrar(){
   const q = (busqueda.value || "").toLowerCase();
   renderUsuarios(
     usuarios.filter(u =>
-      String(u[1]||"").toLowerCase().includes(q) ||
-      String(u[3]||"").toLowerCase().includes(q) ||
-      String(u[4]||"").toLowerCase().includes(q)
+      String(u[1]).toLowerCase().includes(q) ||
+      String(u[3]).toLowerCase().includes(q) ||
+      String(u[4]).toLowerCase().includes(q)
     )
   );
 }
 
 /* ======================================================
-   MODAL USUARIO
+   MODAL
 ====================================================== */
 function abrirCrear(){
   modo = "crear";
@@ -667,21 +652,27 @@ function limpiar(){
 ====================================================== */
 async function guardarUsuario(){
 
+  const token = localStorage.getItem("token");
+  if (!token) return alert("Sesión inválida");
+
   const permisos = [...document.querySelectorAll(".permissions input:checked")]
     .map(c => c.value)
     .join(",");
 
-  const fd = new FormData();
-  fd.append("action", modo==="crear" ? "crearUsuario" : "editarUsuario");
-  fd.append("usuario", localStorage.getItem("usuario") || "");
-  fd.append("username", u_user.value);
-  fd.append("password", u_pass.value);
-  fd.append("nombre", u_nombre.value);
-  fd.append("rol", u_rol.value);
-  fd.append("activo", u_activo.value);
-  fd.append("permisos", permisos);
-
-  await fetch(API, { method:"POST", body: fd });
+  await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: modo === "crear" ? "crearUsuario" : "editarUsuario",
+      token,
+      username: u_user.value,
+      password: u_pass.value,
+      nombre: u_nombre.value,
+      rol: u_rol.value,
+      activo: u_activo.value,
+      permisos
+    })
+  });
 
   cerrarUsuario();
   cargarUsuarios();
@@ -690,23 +681,28 @@ async function guardarUsuario(){
 /* ======================================================
    ELIMINAR USUARIO
 ====================================================== */
-async function eliminarUsuario(u){
-  if (!confirm("Eliminar " + u + "?")) return;
+async function eliminarUsuario(username){
+  if (!confirm("Eliminar " + username + "?")) return;
 
-  const fd = new FormData();
-  fd.append("action","eliminarUsuario");
-  fd.append("usuario", localStorage.getItem("usuario") || "");
-  fd.append("username",u);
+  const token = localStorage.getItem("token");
+  if (!token) return alert("Sesión inválida");
 
-  await fetch(API, { method:"POST", body: fd });
+  await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "eliminarUsuario",
+      token,
+      username
+    })
+  });
+
   cargarUsuarios();
 }
 
-/* ======================================================
-   UTIL
-====================================================== */
+/* ================= UTIL ================= */
 function esc(t){
-  return String(t ?? "")
+  return String(t || "")
     .replace(/\\/g,"\\\\")
     .replace(/'/g,"\\'")
     .replace(/"/g,'\\"')
