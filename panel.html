@@ -457,7 +457,8 @@ input,select{
 
 <script>
 /* ======================================================
-   USUARIOS – COMPATIBLE CON TU APPS SCRIPT
+   USUARIOS – JS CORRECTO (POST + JSON + TOKEN)
+   Compatible 100% con tu Apps Script
 ====================================================== */
 
 const API =
@@ -491,36 +492,35 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ======================================================
-   CARGAR USUARIOS (POST + JSON + TOKEN)
+   CARGAR USUARIOS
 ====================================================== */
 async function cargarUsuarios(){
-
   btnLoad.classList.add("loading");
   btnLoad.innerHTML = `<div class="loader"></div> Cargando`;
 
   try {
     const token = localStorage.getItem("token");
-    if (!token) throw "Token no encontrado";
+    if (!token) throw "TOKEN_NO_EXISTE";
 
-    const r = await fetch(API, {
+    const res = await fetch(API, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type":"application/json" },
       body: JSON.stringify({
         action: "listarUsuarios",
         token: token
       })
     });
 
-    const res = await r.json();
-    console.log("RESPUESTA listarUsuarios:", res);
+    const json = await res.json();
+    console.log("listarUsuarios:", json);
 
-    if (!res.ok) throw res.msg || "Error backend";
+    if (!json.ok) throw json.msg || "ERROR_BACKEND";
 
-    usuarios = Array.isArray(res.data) ? res.data : [];
+    usuarios = Array.isArray(json.data) ? json.data : [];
     renderUsuarios(usuarios);
 
   } catch (e) {
-    console.error("ERROR:", e);
+    console.error("cargarUsuarios:", e);
     tablaUsuarios.innerHTML =
       `<tr><td colspan="6">Error al cargar usuarios</td></tr>`;
   }
@@ -533,7 +533,6 @@ async function cargarUsuarios(){
    RENDER
 ====================================================== */
 function renderUsuarios(data){
-
   tablaUsuarios.innerHTML = "";
   mobileList.innerHTML = "";
 
@@ -545,12 +544,11 @@ function renderUsuarios(data){
 
   data.forEach(u => {
     // [ID, USERNAME, PASSWORD, NOMBRE, ROL, ACTIVO, PERMISOS]
-
-    const usuario  = u[1];
-    const pass     = u[2];
-    const nombre   = u[3];
-    const rol      = u[4];
-    const activo   = u[5];
+    const usuario  = u[1] || "";
+    const pass     = u[2] || "";
+    const nombre   = u[3] || "";
+    const rol      = u[4] || "";
+    const activo   = u[5] || "";
     const permisos = u[6] || "";
 
     tablaUsuarios.innerHTML += `
@@ -562,7 +560,7 @@ function renderUsuarios(data){
         <td>${esc(activo)}</td>
         <td>
           <button class="btn-edit"
-            onclick="editar('${esc(usuario)}','${esc(pass)}','${esc(nombre)}','${esc(rol)}','${esc(activo)}','${esc(permisos)}')">
+            onclick="editarUsuario('${esc(usuario)}','${esc(pass)}','${esc(nombre)}','${esc(rol)}','${esc(activo)}','${esc(permisos)}')">
             Editar
           </button>
           <button class="btn-danger"
@@ -579,7 +577,7 @@ function renderUsuarios(data){
         <p><b>Rol:</b> ${esc(rol)}</p>
         <div class="mobile-actions">
           <button class="btn-edit"
-            onclick="editar('${esc(usuario)}','${esc(pass)}','${esc(nombre)}','${esc(rol)}','${esc(activo)}','${esc(permisos)}')">
+            onclick="editarUsuario('${esc(usuario)}','${esc(pass)}','${esc(nombre)}','${esc(rol)}','${esc(activo)}','${esc(permisos)}')">
             Editar
           </button>
           <button class="btn-danger"
@@ -606,7 +604,7 @@ function filtrar(){
 }
 
 /* ======================================================
-   MODAL
+   MODAL USUARIO
 ====================================================== */
 function abrirCrear(){
   modo = "crear";
@@ -616,7 +614,7 @@ function abrirCrear(){
   modalUsuario.style.display = "flex";
 }
 
-function editar(u,p,n,r,a,per){
+function editarUsuario(u,p,n,r,a,per){
   modo = "editar";
   tituloUsuario.innerText = "Editar Usuario";
 
@@ -651,17 +649,15 @@ function limpiar(){
    GUARDAR USUARIO
 ====================================================== */
 async function guardarUsuario(){
-
   const token = localStorage.getItem("token");
   if (!token) return alert("Sesión inválida");
 
   const permisos = [...document.querySelectorAll(".permissions input:checked")]
-    .map(c => c.value)
-    .join(",");
+    .map(c => c.value).join(",");
 
   await fetch(API, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type":"application/json" },
     body: JSON.stringify({
       action: modo === "crear" ? "crearUsuario" : "editarUsuario",
       token,
@@ -689,7 +685,7 @@ async function eliminarUsuario(username){
 
   await fetch(API, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type":"application/json" },
     body: JSON.stringify({
       action: "eliminarUsuario",
       token,
@@ -709,6 +705,5 @@ function esc(t){
     .replace(/\n/g," ");
 }
 </script>
-   
-</body>
+     </body>
 </html>
