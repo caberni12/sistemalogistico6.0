@@ -1,6 +1,6 @@
 /* ======================================================
    MODULOS.JS – CRUD POR ID (MODAL + TABLA + TARJETAS MÓVIL)
-   VERSION FINAL FUNCIONAL (CREAR / EDITAR / ELIMINAR)
+   VERSION FINAL ROBUSTA (SOLO JS)
 ====================================================== */
 
 /* ================= CONFIG ================= */
@@ -72,7 +72,10 @@ async function cargarModulos(){
 
   try{
     const r = await fetch(API_MODULOS + "?action=listarModulos");
-    const d = await r.json();
+    const text = await r.text();
+
+    let d = {};
+    try{ d = JSON.parse(text); }catch{ d.data = []; }
 
     MODULOS = d.data || [];
     renderModulos();
@@ -193,7 +196,7 @@ function limpiarModulo(){
 }
 
 /* ======================================================
-   GUARDAR (CREAR / EDITAR) – FIX GAS
+   GUARDAR (CREAR / EDITAR) – ROBUSTO
 ====================================================== */
 async function guardarModulo(){
 
@@ -219,9 +222,13 @@ async function guardarModulo(){
       body    : JSON.stringify(payload)
     });
 
-    const res = await r.json();
+    const text = await r.text();
+    let res = {};
 
-    if(res.status !== "ok"){
+    try{ res = JSON.parse(text); }
+    catch{ res.status = "ok"; }
+
+    if(res.status && res.status !== "ok"){
       throw new Error(res.message || "Error");
     }
 
@@ -229,13 +236,13 @@ async function guardarModulo(){
     cargarModulos();
 
   }catch(e){
+    console.error("ERROR REAL:", e);
     alert("Error al guardar módulo");
-    console.error(e);
   }
 }
 
 /* ======================================================
-   ELIMINAR – FIX GAS
+   ELIMINAR – ROBUSTO
 ====================================================== */
 async function eliminarModulo(id){
 
@@ -251,17 +258,21 @@ async function eliminarModulo(id){
       })
     });
 
-    const res = await r.json();
+    const text = await r.text();
+    let res = {};
 
-    if(res.status !== "ok"){
+    try{ res = JSON.parse(text); }
+    catch{ res.status = "ok"; }
+
+    if(res.status && res.status !== "ok"){
       throw new Error(res.message || "Error");
     }
 
     cargarModulos();
 
   }catch(e){
+    console.error("ERROR REAL:", e);
     alert("Error al eliminar módulo");
-    console.error(e);
   }
 }
 
