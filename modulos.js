@@ -1,6 +1,6 @@
 /* ======================================================
-   MODULOS.JS – CRUD POR ID (MODAL + TABLA + TARJETAS MÓVIL)
-   VERSION FINAL ROBUSTA (SOLO JS)
+   MODULOS.JS – CRUD POR ID (MODAL + TABLA + TARJETAS)
+   VERSION FINAL ESTABLE PARA APPS SCRIPT
 ====================================================== */
 
 /* ================= CONFIG ================= */
@@ -9,7 +9,7 @@ const API_MODULOS =
 
 /* ================= ESTADO ================= */
 let MODULOS = [];
-let MODO_MODULO = "crear"; // crear | editar
+let MODO_MODULO = "crear";
 let MODULO_ID = null;
 
 /* ================= DOM ================= */
@@ -72,28 +72,24 @@ async function cargarModulos(){
 
   try{
     const r = await fetch(API_MODULOS + "?action=listarModulos");
-    const text = await r.text();
-
-    let d = {};
-    try{ d = JSON.parse(text); }catch{ d.data = []; }
+    const d = await r.json();
 
     MODULOS = d.data || [];
     renderModulos();
 
   }catch(e){
+    console.error(e);
     tablaModulos.innerHTML =
       `<tr><td colspan="5">Error al cargar</td></tr>`;
-    console.error(e);
   }
 }
 
 /* ======================================================
-   RENDER TABLA + TARJETAS
+   RENDER
 ====================================================== */
 function renderModulos(){
 
   const cards = document.getElementById("modulosCards");
-
   tablaModulos.innerHTML = "";
   cards.innerHTML = "";
 
@@ -107,7 +103,6 @@ function renderModulos(){
 
   MODULOS.forEach(m => {
 
-    /* ===== TABLA ===== */
     tablaModulos.innerHTML += `
       <tr>
         <td>${m[1]}</td>
@@ -116,53 +111,33 @@ function renderModulos(){
         <td>${m[5]}</td>
         <td>
           <button class="btn-edit"
-            onclick="editarModulo(
-              ${m[0]},
-              '${escapeJS(m[1])}',
-              '${escapeJS(m[2])}',
-              '${escapeJS(m[3])}',
-              '${escapeJS(m[4])}',
-              '${m[5]}'
-            )">Editar</button>
-
+            onclick="editarModulo(${m[0]},'${escapeJS(m[1])}','${escapeJS(m[2])}','${escapeJS(m[3])}','${escapeJS(m[4])}','${m[5]}')">
+            Editar
+          </button>
           <button class="btn-danger"
             onclick="eliminarModulo(${m[0]})">
             Eliminar
           </button>
         </td>
-      </tr>
-    `;
+      </tr>`;
 
-    /* ===== CARD MÓVIL ===== */
     cards.innerHTML += `
       <div class="modulo-card">
-        <span class="modulo-badge ${m[5]==='SI'?'activo':'inactivo'}">
-          ${m[5]}
-        </span>
-
+        <span class="modulo-badge ${m[5]==='SI'?'activo':'inactivo'}">${m[5]}</span>
         <h4>${m[3] || "📦"} ${m[1]}</h4>
-
         <p><b>Archivo:</b> ${m[2]}</p>
         <p><b>Permiso:</b> ${m[4]}</p>
-
         <div class="modulo-actions">
           <button class="btn-edit"
-            onclick="editarModulo(
-              ${m[0]},
-              '${escapeJS(m[1])}',
-              '${escapeJS(m[2])}',
-              '${escapeJS(m[3])}',
-              '${escapeJS(m[4])}',
-              '${m[5]}'
-            )">Editar</button>
-
+            onclick="editarModulo(${m[0]},'${escapeJS(m[1])}','${escapeJS(m[2])}','${escapeJS(m[3])}','${escapeJS(m[4])}','${m[5]}')">
+            Editar
+          </button>
           <button class="btn-danger"
             onclick="eliminarModulo(${m[0]})">
             Eliminar
           </button>
         </div>
-      </div>
-    `;
+      </div>`;
   });
 }
 
@@ -196,82 +171,50 @@ function limpiarModulo(){
 }
 
 /* ======================================================
-   GUARDAR (CREAR / EDITAR) – ROBUSTO
+   GUARDAR – APPS SCRIPT COMPATIBLE
 ====================================================== */
 async function guardarModulo(){
 
-  const payload = {
-    action  : MODO_MODULO === "editar" ? "editarModulo" : "crearModulo",
-    id      : MODULO_ID,
-    nombre  : m_nombre.value.trim(),
-    archivo : m_archivo.value.trim(),
-    icono   : m_icono.value.trim(),
-    permiso : m_permiso.value.trim(),
-    activo  : m_activo.value
-  };
-
-  if(!payload.nombre || !payload.archivo || !payload.permiso){
+  if(!m_nombre.value || !m_archivo.value || !m_permiso.value){
     alert("Complete los campos obligatorios");
     return;
   }
 
+  const fd = new FormData();
+  fd.append("action", MODO_MODULO === "editar" ? "editarModulo" : "crearModulo");
+  fd.append("id", MODULO_ID || "");
+  fd.append("nombre", m_nombre.value);
+  fd.append("archivo", m_archivo.value);
+  fd.append("icono", m_icono.value);
+  fd.append("permiso", m_permiso.value);
+  fd.append("activo", m_activo.value);
+
   try{
-    const r = await fetch(API_MODULOS,{
-      method  : "POST",
-      headers : { "Content-Type":"application/json" },
-      body    : JSON.stringify(payload)
-    });
-
-    const text = await r.text();
-    let res = {};
-
-    try{ res = JSON.parse(text); }
-    catch{ res.status = "ok"; }
-
-    if(res.status && res.status !== "ok"){
-      throw new Error(res.message || "Error");
-    }
-
+    await fetch(API_MODULOS, { method:"POST", body:fd });
     cerrarModulo();
     cargarModulos();
-
   }catch(e){
-    console.error("ERROR REAL:", e);
+    console.error(e);
     alert("Error al guardar módulo");
   }
 }
 
 /* ======================================================
-   ELIMINAR – ROBUSTO
+   ELIMINAR – APPS SCRIPT COMPATIBLE
 ====================================================== */
 async function eliminarModulo(id){
 
   if(!confirm("¿Eliminar módulo?")) return;
 
+  const fd = new FormData();
+  fd.append("action","eliminarModulo");
+  fd.append("id",id);
+
   try{
-    const r = await fetch(API_MODULOS,{
-      method  : "POST",
-      headers : { "Content-Type":"application/json" },
-      body    : JSON.stringify({
-        action : "eliminarModulo",
-        id     : id
-      })
-    });
-
-    const text = await r.text();
-    let res = {};
-
-    try{ res = JSON.parse(text); }
-    catch{ res.status = "ok"; }
-
-    if(res.status && res.status !== "ok"){
-      throw new Error(res.message || "Error");
-    }
-
+    await fetch(API_MODULOS,{ method:"POST", body:fd });
     cargarModulos();
-
   }catch(e){
-    console.error("ERROR REAL:", e);
+    console.error(e);
     alert("Error al eliminar módulo");
   }
 }
