@@ -457,61 +457,89 @@ input,select{
 
 <script>
 /* ======================================================
-   USUARIOS – BASE ESTABLE
+   USUARIOS – JS FINAL, ROBUSTO Y AUTOCONTENIDO
 ====================================================== */
+
+/* ================= CONFIG ================= */
 const API =
 "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
-/* ===== ESTADO ===== */
+/* ================= ESTADO ================= */
 let usuarios = [];
+let modo = "crear";
 
-/* ===== DOM ===== */
-const tablaUsuarios = document.getElementById("tablaUsuarios");
-const mobileList    = document.getElementById("mobileList");
-const btnLoad       = document.getElementById("btnLoad");
+/* ================= DOM ================= */
+const $ = (id) => document.getElementById(id);
 
-/* ===== AUTO LOAD ===== */
-document.addEventListener("DOMContentLoaded", cargarUsuarios);
+const btnLoad        = $("btnLoad");
+const tablaUsuarios  = $("tablaUsuarios");
+const mobileList     = $("mobileList");
+const busqueda       = $("busqueda");
+
+const modalUsuario   = $("modalUsuario");
+const tituloUsuario  = $("tituloUsuario");
+
+const u_user   = $("u_user");
+const u_pass   = $("u_pass");
+const u_nombre = $("u_nombre");
+const u_rol    = $("u_rol");
+const u_activo = $("u_activo");
+const btnGuardar = $("btnGuardar");
+
+/* ================= AUTO LOAD ================= */
+document.addEventListener("DOMContentLoaded", () => {
+  cargarUsuarios();
+});
 
 /* ======================================================
    CARGAR USUARIOS
 ====================================================== */
-async function cargarUsuarios() {
-  btnLoad.textContent = "Cargando...";
-  btnLoad.disabled = true;
+async function cargarUsuarios(){
+  if (!btnLoad) return;
+
+  btnLoad.classList.add("loading");
+  btnLoad.innerHTML = `<div class="loader"></div> Cargando`;
 
   try {
     const r = await fetch(API + "?action=listarUsuarios");
-    const text = await r.text();
-    console.log("RESPUESTA RAW:", text);
+    const raw = await r.text();
+    console.log("RAW:", raw);
 
-    const d = JSON.parse(text);
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch { parsed = raw; }
 
-    if (!Array.isArray(d.data)) {
-      throw "Respuesta sin data[]";
+    // Normalización de formatos
+    if (Array.isArray(parsed)) {
+      usuarios = parsed;
+    } else if (parsed && Array.isArray(parsed.data)) {
+      usuarios = parsed.data;
+    } else if (parsed && Array.isArray(parsed.usuarios)) {
+      usuarios = parsed.usuarios;
+    } else {
+      console.warn("Formato no reconocido:", parsed);
+      usuarios = [];
     }
 
-    usuarios = d.data;
     renderUsuarios(usuarios);
 
-  } catch (err) {
-    console.error("ERROR:", err);
+  } catch (e) {
+    console.error(e);
     tablaUsuarios.innerHTML =
       `<tr><td colspan="6">Error al cargar usuarios</td></tr>`;
   }
 
-  btnLoad.textContent = "Cargar usuarios";
-  btnLoad.disabled = false;
+  btnLoad.classList.remove("loading");
+  btnLoad.innerHTML = "Cargar usuarios";
 }
 
 /* ======================================================
    RENDER
 ====================================================== */
-function renderUsuarios(data) {
+function renderUsuarios(data){
   tablaUsuarios.innerHTML = "";
   mobileList.innerHTML = "";
 
-  if (!data.length) {
+  if (!Array.isArray(data) || !data.length){
     tablaUsuarios.innerHTML =
       `<tr><td colspan="6">Sin usuarios</td></tr>`;
     return;
@@ -520,30 +548,152 @@ function renderUsuarios(data) {
   data.forEach(u => {
     // Estructura esperada:
     // [fecha, usuario, pass, nombre, rol, activo, permisos]
-
-    const usuario = u[1];
-    const pass    = u[2];
-    const nombre  = u[3];
-    const rol     = u[4];
-    const activo  = u[5];
+    const usuario  = u[1] ?? "";
+    const pass     = u[2] ?? "";
+    const nombre   = u[3] ?? "";
+    const rol      = u[4] ?? "";
+    const activo   = u[5] ?? "";
+    const permisos = u[6] ?? "";
 
     tablaUsuarios.innerHTML += `
       <tr>
-        <td>${usuario}</td>
-        <td>${pass}</td>
-        <td>${nombre}</td>
-        <td>${rol}</td>
-        <td>${activo}</td>
-        <td>—</td>
+        <td>${esc(usuario)}</td>
+        <td>${esc(pass)}</td>
+        <td>${esc(nombre)}</td>
+        <td>${esc(rol)}</td>
+        <td>${esc(activo)}</td>
+        <td>
+          <button class="btn-edit"
+            onclick="editar('${esc(usuario)}','${esc(pass)}','${esc(nombre)}','${esc(rol)}','${esc(activo)}','${esc(permisos)}')">
+            Editar
+          </button>
+          <button class="btn-danger"
+            onclick="eliminarUsuario('${esc(usuario)}')">
+            Eliminar
+          </button>
+        </td>
       </tr>`;
 
     mobileList.innerHTML += `
       <div class="mobile-card">
-        <h4>${nombre}</h4>
-        <p><b>Usuario:</b> ${usuario}</p>
-        <p><b>Rol:</b> ${rol}</p>
+        <h4>${esc(nombre)}</h4>
+        <p><b>Usuario:</b> ${esc(usuario)}</p>
+        <p><b>Rol:</b> ${esc(rol)}</p>
+        <div class="mobile-actions">
+          <button class="btn-edit"
+            onclick="editar('${esc(usuario)}','${esc(pass)}','${esc(nombre)}','${esc(rol)}','${esc(activo)}','${esc(permisos)}')">
+            Editar
+          </button>
+          <button class="btn-danger"
+            onclick="eliminarUsuario('${esc(usuario)}')">
+            Eliminar
+          </button>
+        </div>
       </div>`;
   });
+}
+
+/* ======================================================
+   FILTRO
+====================================================== */
+function filtrar(){
+  const q = (busqueda.value || "").toLowerCase();
+  renderUsuarios(
+    usuarios.filter(u =>
+      String(u[1]||"").toLowerCase().includes(q) ||
+      String(u[3]||"").toLowerCase().includes(q) ||
+      String(u[4]||"").toLowerCase().includes(q)
+    )
+  );
+}
+
+/* ======================================================
+   MODAL USUARIO
+====================================================== */
+function abrirCrear(){
+  modo = "crear";
+  tituloUsuario.innerText = "Crear Usuario";
+  u_user.disabled = false;
+  limpiar();
+  modalUsuario.style.display = "flex";
+}
+
+function editar(u,p,n,r,a,per){
+  modo = "editar";
+  tituloUsuario.innerText = "Editar Usuario";
+
+  u_user.value = u;
+  u_user.disabled = true;
+  u_pass.value = p;
+  u_nombre.value = n;
+  u_rol.value = r;
+  u_activo.value = a;
+
+  document.querySelectorAll(".permissions input")
+    .forEach(c => c.checked = per.includes(c.value));
+
+  modalUsuario.style.display = "flex";
+}
+
+function cerrarUsuario(){
+  modalUsuario.style.display = "none";
+}
+
+function limpiar(){
+  u_user.value = "";
+  u_pass.value = "";
+  u_nombre.value = "";
+  u_rol.value = "ADMIN";
+  u_activo.value = "SI";
+  document.querySelectorAll(".permissions input")
+    .forEach(c => c.checked = false);
+}
+
+/* ======================================================
+   GUARDAR (FormData)
+====================================================== */
+async function guardarUsuario(){
+  const permisos = [...document.querySelectorAll(".permissions input:checked")]
+    .map(c => c.value).join(",");
+
+  const fd = new FormData();
+  fd.append("action", modo==="crear" ? "crearUsuario" : "editarUsuario");
+  fd.append("username", u_user.value);
+  fd.append("password", u_pass.value);
+  fd.append("nombre", u_nombre.value);
+  fd.append("rol", u_rol.value);
+  fd.append("activo", u_activo.value);
+  fd.append("permisos", permisos);
+
+  await fetch(API, { method:"POST", body: fd });
+
+  cerrarUsuario();
+  cargarUsuarios();
+}
+
+/* ======================================================
+   ELIMINAR
+====================================================== */
+async function eliminarUsuario(u){
+  if (!confirm("Eliminar " + u + "?")) return;
+
+  const fd = new FormData();
+  fd.append("action","eliminarUsuario");
+  fd.append("username",u);
+
+  await fetch(API, { method:"POST", body: fd });
+  cargarUsuarios();
+}
+
+/* ======================================================
+   UTIL
+====================================================== */
+function esc(t){
+  return String(t ?? "")
+    .replace(/\\/g,"\\\\")
+    .replace(/'/g,"\\'")
+    .replace(/"/g,'\\"')
+    .replace(/\n/g," ");
 }
 </script>
    
