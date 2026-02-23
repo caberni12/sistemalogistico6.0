@@ -457,9 +457,10 @@ input,select{
 
 <script>
 /* ======================================================
-   USUARIOS – FINAL DEFINITIVO (POST / FormData)
+   USUARIOS – JS FINAL DEFINITIVO
 ====================================================== */
 
+/* ================= CONFIG ================= */
 const API =
 "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
@@ -485,13 +486,13 @@ const u_rol    = $("u_rol");
 const u_activo = $("u_activo");
 const btnGuardar = $("btnGuardar");
 
-/* ================= AUTO LOAD ================= */
+/* ================= AUTO CARGA ================= */
 document.addEventListener("DOMContentLoaded", () => {
   cargarUsuarios();
 });
 
 /* ======================================================
-   CARGAR USUARIOS (POST)
+   CARGAR USUARIOS (POST + usuario)
 ====================================================== */
 async function cargarUsuarios(){
 
@@ -499,8 +500,11 @@ async function cargarUsuarios(){
   btnLoad.innerHTML = `<div class="loader"></div> Cargando`;
 
   try {
+    const usuarioLogin = localStorage.getItem("usuario") || "";
+
     const fd = new FormData();
     fd.append("action", "listarUsuarios");
+    fd.append("usuario", usuarioLogin); // 🔑 OBLIGATORIO PARA TU BACKEND
 
     const r = await fetch(API, {
       method: "POST",
@@ -508,16 +512,21 @@ async function cargarUsuarios(){
     });
 
     const text = await r.text();
-    console.log("RAW:", text);
+    console.log("RAW listarUsuarios:", text);
 
-    let data;
-    try { data = JSON.parse(text); }
-    catch { throw "Respuesta no JSON"; }
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = {};
+    }
 
-    if (Array.isArray(data.data)) {
-      usuarios = data.data;
-    } else if (Array.isArray(data)) {
-      usuarios = data;
+    if (Array.isArray(parsed.data)) {
+      usuarios = parsed.data;
+    } else if (Array.isArray(parsed.usuarios)) {
+      usuarios = parsed.usuarios;
+    } else if (Array.isArray(parsed)) {
+      usuarios = parsed;
     } else {
       usuarios = [];
     }
@@ -525,7 +534,7 @@ async function cargarUsuarios(){
     renderUsuarios(usuarios);
 
   } catch (e) {
-    console.error("ERROR:", e);
+    console.error("ERROR cargarUsuarios:", e);
     tablaUsuarios.innerHTML =
       `<tr><td colspan="6">Error al cargar usuarios</td></tr>`;
   }
@@ -549,7 +558,9 @@ function renderUsuarios(data){
   }
 
   data.forEach(u => {
-    // [fecha, usuario, pass, nombre, rol, activo, permisos]
+    // Formato esperado:
+    // [fecha, usuario, password, nombre, rol, activo, permisos]
+
     const usuario  = u[1] ?? "";
     const pass     = u[2] ?? "";
     const nombre   = u[3] ?? "";
@@ -581,6 +592,16 @@ function renderUsuarios(data){
         <h4>${esc(nombre)}</h4>
         <p><b>Usuario:</b> ${esc(usuario)}</p>
         <p><b>Rol:</b> ${esc(rol)}</p>
+        <div class="mobile-actions">
+          <button class="btn-edit"
+            onclick="editar('${esc(usuario)}','${esc(pass)}','${esc(nombre)}','${esc(rol)}','${esc(activo)}','${esc(permisos)}')">
+            Editar
+          </button>
+          <button class="btn-danger"
+            onclick="eliminarUsuario('${esc(usuario)}')">
+            Eliminar
+          </button>
+        </div>
       </div>`;
   });
 }
@@ -600,7 +621,7 @@ function filtrar(){
 }
 
 /* ======================================================
-   MODAL
+   MODAL USUARIO
 ====================================================== */
 function abrirCrear(){
   modo = "crear";
@@ -642,15 +663,17 @@ function limpiar(){
 }
 
 /* ======================================================
-   GUARDAR
+   GUARDAR USUARIO
 ====================================================== */
 async function guardarUsuario(){
 
   const permisos = [...document.querySelectorAll(".permissions input:checked")]
-    .map(c => c.value).join(",");
+    .map(c => c.value)
+    .join(",");
 
   const fd = new FormData();
   fd.append("action", modo==="crear" ? "crearUsuario" : "editarUsuario");
+  fd.append("usuario", localStorage.getItem("usuario") || "");
   fd.append("username", u_user.value);
   fd.append("password", u_pass.value);
   fd.append("nombre", u_nombre.value);
@@ -665,20 +688,23 @@ async function guardarUsuario(){
 }
 
 /* ======================================================
-   ELIMINAR
+   ELIMINAR USUARIO
 ====================================================== */
 async function eliminarUsuario(u){
-  if (!confirm("Eliminar "+u+"?")) return;
+  if (!confirm("Eliminar " + u + "?")) return;
 
   const fd = new FormData();
   fd.append("action","eliminarUsuario");
+  fd.append("usuario", localStorage.getItem("usuario") || "");
   fd.append("username",u);
 
   await fetch(API, { method:"POST", body: fd });
   cargarUsuarios();
 }
 
-/* ================= UTIL ================= */
+/* ======================================================
+   UTIL
+====================================================== */
 function esc(t){
   return String(t ?? "")
     .replace(/\\/g,"\\\\")
