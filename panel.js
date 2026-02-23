@@ -1,118 +1,141 @@
-<script>
+/* ======================================================
+   MODULOS.JS – CRUD POR ID (MODAL + TABLA + TARJETAS)
+   FUNCIONAL CON GOOGLE APPS SCRIPT (POST CLÁSICO)
+====================================================== */
+
 /* ================= CONFIG ================= */
-const API =
+const API_MODULOS =
   "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
 /* ================= ESTADO ================= */
-let usuarios = [];
-let modo = "crear";
-let SESSION = null;
+let MODULOS = [];
+let MODO_MODULO = "crear"; // crear | editar
+let MODULO_ID = null;
 
-/* ================= SESIÓN (ESTABLE) ================= */
-(async () => {
-  const token = localStorage.getItem("token");
-  const sessionCache = localStorage.getItem("session_data");
+/* ================= DOM ================= */
+let modalModulo,
+    modalListaModulos,
+    tablaModulos,
+    m_nombre,
+    m_archivo,
+    m_icono,
+    m_permiso,
+    m_activo;
 
-  // Sin token → login
-  if (!token) {
-    location.href = "index.html";
-    return;
-  }
+/* ======================================================
+   INIT
+====================================================== */
+document.addEventListener("DOMContentLoaded", () => {
 
-  // Sesión ya validada en caché
-  if (sessionCache) {
-    SESSION = JSON.parse(sessionCache);
-    return;
-  }
+  modalModulo       = document.getElementById("modalModulo");
+  modalListaModulos = document.getElementById("modalListaModulos");
+  tablaModulos      = document.getElementById("tablaModulos");
 
-  try {
-    const r = await fetch(`${API}?action=verify&token=${token}`, {
-      cache: "no-store",
-    });
+  m_nombre  = document.getElementById("m_nombre");
+  m_archivo = document.getElementById("m_archivo");
+  m_icono   = document.getElementById("m_icono");
+  m_permiso = document.getElementById("m_permiso");
+  m_activo  = document.getElementById("m_activo");
 
-    if (!r.ok) throw new Error("Respuesta inválida");
+});
 
-    const res = await r.json();
-
-    // Token inválido confirmado por backend
-    if (!res.valid || res.data.rol !== "ADMIN") {
-      localStorage.clear();
-      location.href = "index.html";
-      return;
-    }
-
-    SESSION = res.data;
-    localStorage.setItem("session_data", JSON.stringify(res.data));
-  } catch (e) {
-    // Error técnico → NO cerrar sesión
-    console.warn("Error temporal de validación:", e);
-  }
-})();
-
-/* ================= CARGAR USUARIOS ================= */
-async function cargarUsuarios() {
-  btnLoad.classList.add("loading");
-  btnLoad.innerHTML = `<div class="loader"></div> Cargando`;
-
-  try {
-    const r = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=UTF-8" },
-      body: JSON.stringify({
-        action: "listarUsuarios",
-        token: localStorage.getItem("token"),
-      }),
-    });
-
-    const res = await r.json();
-    usuarios = res.data || [];
-    render(usuarios);
-  } catch (e) {
-    console.error("Error al cargar usuarios:", e);
-  }
-
-  btnLoad.classList.remove("loading");
-  btnLoad.innerHTML = "Cargar usuarios";
+/* ======================================================
+   MODALES
+====================================================== */
+function abrirCrearModulo(){
+  MODO_MODULO = "crear";
+  MODULO_ID = null;
+  limpiarModulo();
+  modalModulo.style.display = "flex";
 }
 
-/* ================= RENDER ================= */
-function render(data) {
-  tablaUsuarios.innerHTML = "";
-  mobileList.innerHTML = "";
+function cerrarModulo(){
+  modalModulo.style.display = "none";
+}
 
-  data.forEach((u) => {
-    tablaUsuarios.innerHTML += `
+function abrirListaModulos(){
+  modalListaModulos.style.display = "flex";
+  cargarModulos();
+}
+
+function cerrarListaModulos(){
+  modalListaModulos.style.display = "none";
+}
+
+/* ======================================================
+   CARGAR MODULOS
+====================================================== */
+async function cargarModulos(){
+
+  tablaModulos.innerHTML =
+    `<tr><td colspan="5">Cargando…</td></tr>`;
+
+  try{
+    const r = await fetch(API_MODULOS + "?action=listarModulos");
+    const d = await r.json();
+
+    MODULOS = d.data || [];
+    renderModulos();
+
+  }catch(e){
+    console.error(e);
+    tablaModulos.innerHTML =
+      `<tr><td colspan="5">Error al cargar</td></tr>`;
+  }
+}
+
+/* ======================================================
+   RENDER TABLA + TARJETAS
+====================================================== */
+function renderModulos(){
+
+  const cards = document.getElementById("modulosCards");
+  tablaModulos.innerHTML = "";
+  cards.innerHTML = "";
+
+  if(!MODULOS.length){
+    tablaModulos.innerHTML =
+      `<tr><td colspan="5">Sin módulos</td></tr>`;
+    cards.innerHTML =
+      `<p style="text-align:center">Sin módulos</p>`;
+    return;
+  }
+
+  MODULOS.forEach(m => {
+
+    tablaModulos.innerHTML += `
       <tr>
-        <td>${u[1]}</td>
-        <td>${u[2]}</td>
-        <td>${u[3]}</td>
-        <td>${u[4]}</td>
-        <td>${u[5]}</td>
+        <td>${m[1]}</td>
+        <td>${m[2]}</td>
+        <td>${m[4]}</td>
+        <td>${m[5]}</td>
         <td>
           <button class="btn-edit"
-            onclick="editar('${u[1]}','${u[2]}','${u[3]}','${u[4]}','${u[5]}','${u[6] || ""}')">
+            onclick="editarModulo(${m[0]},'${escapeJS(m[1])}','${escapeJS(m[2])}','${escapeJS(m[3])}','${escapeJS(m[4])}','${m[5]}')">
             Editar
           </button>
           <button class="btn-danger"
-            onclick="eliminarUsuario('${u[1]}')">
+            onclick="eliminarModulo(${m[0]})">
             Eliminar
           </button>
         </td>
       </tr>`;
 
-    mobileList.innerHTML += `
-      <div class="mobile-card">
-        <h4>${u[3]}</h4>
-        <p><b>Usuario:</b> ${u[1]}</p>
-        <p><b>Contraseña:</b> ${u[2]}</p>
-        <p><b>Rol:</b> ${u[4]}</p>
-        <div class="mobile-actions">
+    cards.innerHTML += `
+      <div class="modulo-card">
+        <span class="modulo-badge ${m[5]==='SI'?'activo':'inactivo'}">
+          ${m[5]}
+        </span>
+        <h4>${m[3] || "📦"} ${m[1]}</h4>
+        <p><b>Archivo:</b> ${m[2]}</p>
+        <p><b>Permiso:</b> ${m[4]}</p>
+        <div class="modulo-actions">
           <button class="btn-edit"
-            onclick="editar('${u[1]}','${u[2]}','${u[3]}','${u[4]}','${u[5]}','${u[6] || ""}')">
+            onclick="editarModulo(${m[0]},'${escapeJS(m[1])}','${escapeJS(m[2])}','${escapeJS(m[3])}','${escapeJS(m[4])}','${m[5]}')">
             Editar
           </button>
           <button class="btn-danger"
-            onclick="eliminarUsuario('${u[1]}')">
+            onclick="eliminarModulo(${m[0]})">
             Eliminar
           </button>
         </div>
@@ -120,121 +143,91 @@ function render(data) {
   });
 }
 
-/* ================= FILTRO ================= */
-function filtrar() {
-  const q = busqueda.value.toLowerCase();
-  render(
-    usuarios.filter(
-      (u) =>
-        u[1].toLowerCase().includes(q) ||
-        u[3].toLowerCase().includes(q) ||
-        u[4].toLowerCase().includes(q)
-    )
-  );
+/* ======================================================
+   EDITAR
+====================================================== */
+function editarModulo(id,nombre,archivo,icono,permiso,activo){
+
+  MODO_MODULO = "editar";
+  MODULO_ID = id;
+
+  cerrarListaModulos();
+  modalModulo.style.display = "flex";
+
+  m_nombre.value  = nombre;
+  m_archivo.value = archivo;
+  m_icono.value   = icono;
+  m_permiso.value = permiso;
+  m_activo.value  = activo;
 }
 
-/* ================= MODAL USUARIO ================= */
-function abrirCrear() {
-  modo = "crear";
-  tituloUsuario.innerText = "Crear Usuario";
-  u_user.disabled = false;
-  limpiar();
-  modalUsuario.style.display = "flex";
+/* ======================================================
+   LIMPIAR
+====================================================== */
+function limpiarModulo(){
+  m_nombre.value  = "";
+  m_archivo.value = "";
+  m_icono.value   = "";
+  m_permiso.value = "";
+  m_activo.value  = "SI";
 }
 
-function editar(u, p, n, r, a, per) {
-  modo = "editar";
-  tituloUsuario.innerText = "Editar Usuario";
-  u_user.value = u;
-  u_user.disabled = true;
-  u_pass.value = p;
-  u_nombre.value = n;
-  u_rol.value = r;
-  u_activo.value = a;
-  document
-    .querySelectorAll(".permissions input")
-    .forEach((c) => (c.checked = (per || "").includes(c.value)));
-  modalUsuario.style.display = "flex";
-}
+/* ======================================================
+   GUARDAR (CREAR / EDITAR)
+====================================================== */
+async function guardarModulo(){
 
-function cerrarUsuario() {
-  modalUsuario.style.display = "none";
-}
-
-function limpiar() {
-  u_user.value = "";
-  u_pass.value = "";
-  u_nombre.value = "";
-  u_rol.value = "ADMIN";
-  u_activo.value = "SI";
-  document
-    .querySelectorAll(".permissions input")
-    .forEach((c) => (c.checked = false));
-}
-
-/* ================= GUARDAR / EDITAR ================= */
-async function guardarUsuario() {
-  btnGuardar.classList.add("loading");
-  btnGuardar.innerHTML = `<div class="loader"></div> Guardando`;
-
-  const permisos = [
-    ...document.querySelectorAll(".permissions input:checked"),
-  ]
-    .map((c) => c.value)
-    .join(",");
-
-  try {
-    await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=UTF-8" },
-      body: JSON.stringify({
-        action: modo === "crear" ? "crearUsuario" : "editarUsuario",
-        token: localStorage.getItem("token"),
-        username: u_user.value,
-        password: u_pass.value,
-        nombre: u_nombre.value,
-        rol: u_rol.value,
-        activo: u_activo.value,
-        permisos,
-      }),
-    });
-
-    cerrarUsuario();
-    cargarUsuarios();
-  } catch (e) {
-    console.error("Error al guardar usuario:", e);
+  if(!m_nombre.value || !m_archivo.value || !m_permiso.value){
+    alert("Complete los campos obligatorios");
+    return;
   }
 
-  btnGuardar.classList.remove("loading");
-  btnGuardar.innerHTML = "Guardar";
-}
+  const fd = new FormData();
+  fd.append("action", MODO_MODULO === "editar" ? "editarModulo" : "crearModulo");
+  fd.append("id", MODULO_ID || "");
+  fd.append("nombre", m_nombre.value);
+  fd.append("archivo", m_archivo.value);
+  fd.append("icono", m_icono.value);
+  fd.append("permiso", m_permiso.value);
+  fd.append("activo", m_activo.value);
 
-/* ================= ELIMINAR ================= */
-async function eliminarUsuario(u) {
-  if (!confirm("Eliminar " + u + "?")) return;
-
-  try {
-    await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=UTF-8" },
-      body: JSON.stringify({
-        action: "eliminarUsuario",
-        token: localStorage.getItem("token"),
-        username: u,
-      }),
-    });
-
-    cargarUsuarios();
-  } catch (e) {
-    console.error("Error al eliminar usuario:", e);
+  try{
+    await fetch(API_MODULOS, { method:"POST", body:fd });
+    cerrarModulo();
+    cargarModulos();
+  }catch(e){
+    console.error(e);
+    alert("Error al guardar módulo");
   }
 }
 
-/* ================= LOGOUT (USAR CUANDO CORRESPONDA) ================= */
-function logout() {
-  localStorage.removeItem("token");
-  localStorage.removeItem("session_data");
-  location.href = "index.html";
+/* ======================================================
+   ELIMINAR
+====================================================== */
+async function eliminarModulo(id){
+
+  if(!confirm("¿Eliminar módulo?")) return;
+
+  const fd = new FormData();
+  fd.append("action","eliminarModulo");
+  fd.append("id",id);
+
+  try{
+    await fetch(API_MODULOS,{ method:"POST", body:fd });
+    cargarModulos();
+  }catch(e){
+    console.error(e);
+    alert("Error al eliminar módulo");
+  }
 }
 
-</script>
+/* ======================================================
+   UTIL
+====================================================== */
+function escapeJS(text){
+  return String(text)
+    .replace(/\\/g,"\\\\")
+    .replace(/'/g,"\\'")
+    .replace(/"/g,'\\"')
+    .replace(/\n/g," ");
+}
