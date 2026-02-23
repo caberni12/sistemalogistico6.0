@@ -457,11 +457,11 @@ input,select{
 
 <script>
 /* ======================================================
-   USUARIOS – JS FINAL DEFINITIVO (AUTO-DETECCIÓN BACKEND)
+   USUARIOS – COMPATIBLE CON TU APPS SCRIPT
 ====================================================== */
 
 const API =
-"https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
+"https://script.google.com/macros/s/AKfycbw4RhWpyHgih8JPBh7x3_e4yGudmNCSb7GHMrW8tXe5R60yzEDfH9hNaViAOWSXRYTJ/exec";
 
 /* ================= ESTADO ================= */
 let usuarios = [];
@@ -470,13 +470,13 @@ let modo = "crear";
 /* ================= DOM ================= */
 const $ = id => document.getElementById(id);
 
-const tablaUsuarios = $("tablaUsuarios");
-const mobileList    = $("mobileList");
-const btnLoad       = $("btnLoad");
-const busqueda      = $("busqueda");
+const btnLoad        = $("btnLoad");
+const tablaUsuarios  = $("tablaUsuarios");
+const mobileList     = $("mobileList");
+const busqueda       = $("busqueda");
 
-const modalUsuario  = $("modalUsuario");
-const tituloUsuario = $("tituloUsuario");
+const modalUsuario   = $("modalUsuario");
+const tituloUsuario  = $("tituloUsuario");
 
 const u_user   = $("u_user");
 const u_pass   = $("u_pass");
@@ -485,88 +485,61 @@ const u_rol    = $("u_rol");
 const u_activo = $("u_activo");
 const btnGuardar = $("btnGuardar");
 
+/* ================= SESIÓN ================= */
+function getToken(){
+  const t = localStorage.getItem("token");
+  if(!t){
+    alert("Sesión no válida");
+    location.href = "index.html";
+    return null;
+  }
+  return t;
+}
+
 /* ================= AUTO LOAD ================= */
 document.addEventListener("DOMContentLoaded", () => {
   cargarUsuarios();
 });
 
 /* ======================================================
-   INTENTOS AUTOMÁTICOS CONTRA BACKEND
+   CARGAR USUARIOS (POST + TOKEN)
 ====================================================== */
 async function cargarUsuarios(){
 
-  btnLoad.textContent = "Cargando...";
-  btnLoad.disabled = true;
+  const token = getToken();
+  if(!token) return;
 
-  const usuarioLogin =
-    localStorage.getItem("usuario") ||
-    localStorage.getItem("username") ||
-    "";
+  btnLoad.classList.add("loading");
+  btnLoad.innerHTML = `<div class="loader"></div> Cargando`;
 
-  const intentos = [
-    // GET
-    () => fetch(API + "?action=listarUsuarios"),
-    () => fetch(API + "?action=usuarios"),
+  try{
+    const r = await fetch(API,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        action:"listarUsuarios",
+        token: token
+      })
+    });
 
-    // POST sin usuario
-    () => post({ action: "listarUsuarios" }),
-    () => post({ action: "usuarios" }),
+    const res = await r.json();
+    console.log("listarUsuarios:", res);
 
-    // POST con usuario
-    () => post({ action: "listarUsuarios", usuario: usuarioLogin }),
-    () => post({ action: "listarUsuarios", username: usuarioLogin }),
-    () => post({ action: "usuarios", usuario: usuarioLogin }),
-  ];
-
-  for (let i = 0; i < intentos.length; i++) {
-    try {
-      const r = await intentos[i]();
-      const text = await r.text();
-      console.log(`INTENTO ${i+1} RAW:`, text);
-
-      const parsed = safeJSON(text);
-      const data = extraerArray(parsed);
-
-      if (data.length) {
-        usuarios = data;
-        renderUsuarios(usuarios);
-        finalizarCarga();
-        return;
-      }
-
-    } catch (e) {
-      console.warn("Intento fallido", i+1, e);
+    if(!res.ok){
+      throw res.msg || "Error backend";
     }
+
+    usuarios = res.data || [];
+    renderUsuarios(usuarios);
+
+  }catch(err){
+    console.error(err);
+    tablaUsuarios.innerHTML =
+      `<tr><td colspan="6">Error al cargar usuarios</td></tr>`;
   }
 
-  // Si ningún intento funcionó
-  usuarios = [];
-  renderUsuarios([]);
-  finalizarCarga();
-}
-
-/* ======================================================
-   POST helper
-====================================================== */
-function post(obj){
-  const fd = new FormData();
-  Object.keys(obj).forEach(k => fd.append(k, obj[k]));
-  return fetch(API, { method: "POST", body: fd });
-}
-
-/* ======================================================
-   NORMALIZACIÓN RESPUESTA
-====================================================== */
-function safeJSON(text){
-  try { return JSON.parse(text); }
-  catch { return text; }
-}
-
-function extraerArray(res){
-  if (Array.isArray(res)) return res;
-  if (res && Array.isArray(res.data)) return res.data;
-  if (res && Array.isArray(res.usuarios)) return res.usuarios;
-  return [];
+  btnLoad.classList.remove("loading");
+  btnLoad.innerHTML = "Cargar usuarios";
 }
 
 /* ======================================================
@@ -577,34 +550,44 @@ function renderUsuarios(data){
   tablaUsuarios.innerHTML = "";
   mobileList.innerHTML = "";
 
-  if (!Array.isArray(data) || !data.length){
+  if(!Array.isArray(data) || !data.length){
     tablaUsuarios.innerHTML =
       `<tr><td colspan="6">Sin usuarios</td></tr>`;
     return;
   }
 
   data.forEach(u => {
-    const usuario = u[1] ?? u.usuario ?? "";
-    const pass    = u[2] ?? u.password ?? "";
-    const nombre  = u[3] ?? u.nombre ?? "";
-    const rol     = u[4] ?? u.rol ?? "";
-    const activo  = u[5] ?? u.activo ?? "";
+    const usuario  = u[1];
+    const pass     = u[2];
+    const nombre   = u[3];
+    const rol      = u[4];
+    const activo   = u[5];
+    const permisos = u[6] || "";
 
     tablaUsuarios.innerHTML += `
       <tr>
-        <td>${esc(usuario)}</td>
-        <td>${esc(pass)}</td>
-        <td>${esc(nombre)}</td>
-        <td>${esc(rol)}</td>
-        <td>${esc(activo)}</td>
-        <td>—</td>
+        <td>${usuario}</td>
+        <td>${pass}</td>
+        <td>${nombre}</td>
+        <td>${rol}</td>
+        <td>${activo}</td>
+        <td>
+          <button class="btn-edit"
+            onclick="editar('${usuario}','${pass}','${nombre}','${rol}','${activo}','${permisos}')">
+            Editar
+          </button>
+          <button class="btn-danger"
+            onclick="eliminarUsuario('${usuario}')">
+            Eliminar
+          </button>
+        </td>
       </tr>`;
 
     mobileList.innerHTML += `
       <div class="mobile-card">
-        <h4>${esc(nombre)}</h4>
-        <p><b>Usuario:</b> ${esc(usuario)}</p>
-        <p><b>Rol:</b> ${esc(rol)}</p>
+        <h4>${nombre}</h4>
+        <p><b>Usuario:</b> ${usuario}</p>
+        <p><b>Rol:</b> ${rol}</p>
       </div>`;
   });
 }
@@ -613,31 +596,109 @@ function renderUsuarios(data){
    FILTRO
 ====================================================== */
 function filtrar(){
-  const q = (busqueda.value || "").toLowerCase();
+  const q = busqueda.value.toLowerCase();
   renderUsuarios(
     usuarios.filter(u =>
-      String(u[1]||u.usuario||"").toLowerCase().includes(q) ||
-      String(u[3]||u.nombre||"").toLowerCase().includes(q) ||
-      String(u[4]||u.rol||"").toLowerCase().includes(q)
+      u[1].toLowerCase().includes(q) ||
+      u[3].toLowerCase().includes(q) ||
+      u[4].toLowerCase().includes(q)
     )
   );
 }
 
 /* ======================================================
-   UI HELPERS
+   MODAL
 ====================================================== */
-function finalizarCarga(){
-  btnLoad.textContent = "Cargar usuarios";
-  btnLoad.disabled = false;
+function abrirCrear(){
+  modo = "crear";
+  tituloUsuario.innerText = "Crear Usuario";
+  u_user.disabled = false;
+  limpiar();
+  modalUsuario.style.display = "flex";
 }
 
-function esc(t){
-  return String(t ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
+function editar(u,p,n,r,a,per){
+  modo = "editar";
+  tituloUsuario.innerText = "Editar Usuario";
+
+  u_user.value = u;
+  u_user.disabled = true;
+  u_pass.value = p;
+  u_nombre.value = n;
+  u_rol.value = r;
+  u_activo.value = a;
+
+  document.querySelectorAll(".permissions input")
+    .forEach(c => c.checked = per.includes(c.value));
+
+  modalUsuario.style.display = "flex";
+}
+
+function cerrarUsuario(){
+  modalUsuario.style.display = "none";
+}
+
+function limpiar(){
+  u_user.value = "";
+  u_pass.value = "";
+  u_nombre.value = "";
+  u_rol.value = "ADMIN";
+  u_activo.value = "SI";
+  document.querySelectorAll(".permissions input")
+    .forEach(c => c.checked = false);
+}
+
+/* ======================================================
+   GUARDAR USUARIO
+====================================================== */
+async function guardarUsuario(){
+
+  const token = getToken();
+  if(!token) return;
+
+  const permisos = [...document.querySelectorAll(".permissions input:checked")]
+    .map(c => c.value).join(",");
+
+  await fetch(API,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      action: modo==="crear" ? "crearUsuario" : "editarUsuario",
+      token: token,
+      username: u_user.value,
+      password: u_pass.value,
+      nombre: u_nombre.value,
+      rol: u_rol.value,
+      activo: u_activo.value,
+      permisos: permisos
+    })
+  });
+
+  cerrarUsuario();
+  cargarUsuarios();
+}
+
+/* ======================================================
+   ELIMINAR
+====================================================== */
+async function eliminarUsuario(u){
+
+  if(!confirm("Eliminar "+u+"?")) return;
+
+  const token = getToken();
+  if(!token) return;
+
+  await fetch(API,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      action:"eliminarUsuario",
+      token: token,
+      username: u
+    })
+  });
+
+  cargarUsuarios();
 }
 </script>
      </body>
