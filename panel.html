@@ -455,50 +455,61 @@ input,select{
   </div>
 </div>
 
-<script>
+
+   <script>
 /* ================= CONFIG ================= */
 const API = "https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
 
+/* ================= ESTADO ================= */
 let usuarios = [];
 let modo = "crear";
 
-/* ================= DOM ================= */
-const btnLoad        = document.getElementById("btnLoad");
-const tablaUsuarios  = document.getElementById("tablaUsuarios");
-const mobileList     = document.getElementById("mobileList");
-const busqueda       = document.getElementById("busqueda");
+/* ================= DOM (SEGUR0) ================= */
+const $ = id => document.getElementById(id);
 
-const modalUsuario   = document.getElementById("modalUsuario");
-const tituloUsuario  = document.getElementById("tituloUsuario");
+const btnLoad        = $("btnLoad");
+const tablaUsuarios  = $("tablaUsuarios");
+const mobileList     = $("mobileList");
+const busqueda       = $("busqueda");
 
-const u_user   = document.getElementById("u_user");
-const u_pass   = document.getElementById("u_pass");
-const u_nombre = document.getElementById("u_nombre");
-const u_rol    = document.getElementById("u_rol");
-const u_activo = document.getElementById("u_activo");
-const btnGuardar = document.getElementById("btnGuardar");
+const modalUsuario   = $("modalUsuario");
+const tituloUsuario  = $("tituloUsuario");
+
+const u_user   = $("u_user");
+const u_pass   = $("u_pass");
+const u_nombre = $("u_nombre");
+const u_rol    = $("u_rol");
+const u_activo = $("u_activo");
+const btnGuardar = $("btnGuardar");
 
 /* ================= AUTO CARGA ================= */
 document.addEventListener("DOMContentLoaded", () => {
+  console.clear();
+  console.log("Panel iniciado");
   cargarUsuarios();
 });
 
 /* ================= CARGAR USUARIOS ================= */
-async function cargarUsuarios() {
+async function cargarUsuarios(){
+  if (!btnLoad) return;
+
   btnLoad.classList.add("loading");
   btnLoad.innerHTML = `<div class="loader"></div> Cargando`;
 
   try {
     const r = await fetch(API + "?action=listarUsuarios");
-    const d = await r.json();
+    const text = await r.text();
+    console.log("RAW RESPONSE:", text);
 
+    const d = JSON.parse(text);
     usuarios = Array.isArray(d.data) ? d.data : [];
+
     render(usuarios);
 
   } catch (e) {
-    tablaUsuarios.innerHTML =
-      `<tr><td colspan="6">Error al cargar usuarios</td></tr>`;
     console.error(e);
+    tablaUsuarios.innerHTML =
+      `<tr><td colspan="6">Error al cargar</td></tr>`;
   }
 
   btnLoad.classList.remove("loading");
@@ -506,33 +517,39 @@ async function cargarUsuarios() {
 }
 
 /* ================= RENDER ================= */
-function render(data) {
+function render(data){
   tablaUsuarios.innerHTML = "";
   mobileList.innerHTML = "";
 
-  if (!data.length) {
+  if (!data.length){
     tablaUsuarios.innerHTML =
       `<tr><td colspan="6">Sin usuarios</td></tr>`;
     return;
   }
 
   data.forEach(u => {
-    const permisos = u[6] || "";
+    // Esperado: [fecha, usuario, pass, nombre, rol, activo, permisos]
+    const usuario = u[1];
+    const pass    = u[2];
+    const nombre  = u[3];
+    const rol     = u[4];
+    const activo  = u[5];
+    const permisos= u[6] || "";
 
     tablaUsuarios.innerHTML += `
       <tr>
-        <td>${u[1]}</td>
-        <td>${u[2]}</td>
-        <td>${u[3]}</td>
-        <td>${u[4]}</td>
-        <td>${u[5]}</td>
+        <td>${usuario}</td>
+        <td>${pass}</td>
+        <td>${nombre}</td>
+        <td>${rol}</td>
+        <td>${activo}</td>
         <td>
           <button class="btn-edit"
-            onclick="editar('${u[1]}','${u[2]}','${u[3]}','${u[4]}','${u[5]}','${permisos}')">
+            onclick="editar('${esc(usuario)}','${esc(pass)}','${esc(nombre)}','${esc(rol)}','${esc(activo)}','${esc(permisos)}')">
             Editar
           </button>
           <button class="btn-danger"
-            onclick="eliminarUsuario('${u[1]}')">
+            onclick="eliminarUsuario('${esc(usuario)}')">
             Eliminar
           </button>
         </td>
@@ -540,16 +557,16 @@ function render(data) {
 
     mobileList.innerHTML += `
       <div class="mobile-card">
-        <h4>${u[3]}</h4>
-        <p><b>Usuario:</b> ${u[1]}</p>
-        <p><b>Rol:</b> ${u[4]}</p>
+        <h4>${nombre}</h4>
+        <p><b>Usuario:</b> ${usuario}</p>
+        <p><b>Rol:</b> ${rol}</p>
         <div class="mobile-actions">
           <button class="btn-edit"
-            onclick="editar('${u[1]}','${u[2]}','${u[3]}','${u[4]}','${u[5]}','${permisos}')">
+            onclick="editar('${esc(usuario)}','${esc(pass)}','${esc(nombre)}','${esc(rol)}','${esc(activo)}','${esc(permisos)}')">
             Editar
           </button>
           <button class="btn-danger"
-            onclick="eliminarUsuario('${u[1]}')">
+            onclick="eliminarUsuario('${esc(usuario)}')">
             Eliminar
           </button>
         </div>
@@ -558,19 +575,19 @@ function render(data) {
 }
 
 /* ================= FILTRO ================= */
-function filtrar() {
-  const q = busqueda.value.toLowerCase();
+function filtrar(){
+  const q = (busqueda.value || "").toLowerCase();
   render(
     usuarios.filter(u =>
-      u[1].toLowerCase().includes(q) ||
-      u[3].toLowerCase().includes(q) ||
-      u[4].toLowerCase().includes(q)
+      (u[1]||"").toLowerCase().includes(q) ||
+      (u[3]||"").toLowerCase().includes(q) ||
+      (u[4]||"").toLowerCase().includes(q)
     )
   );
 }
 
 /* ================= MODAL ================= */
-function abrirCrear() {
+function abrirCrear(){
   modo = "crear";
   tituloUsuario.innerText = "Crear Usuario";
   u_user.disabled = false;
@@ -578,12 +595,11 @@ function abrirCrear() {
   modalUsuario.style.display = "flex";
 }
 
-function editar(u, p, n, r, a, per) {
+function editar(u,p,n,r,a,per){
   modo = "editar";
   tituloUsuario.innerText = "Editar Usuario";
 
-  u_user.value = u;
-  u_user.disabled = true;
+  u_user.value = u; u_user.disabled = true;
   u_pass.value = p;
   u_nombre.value = n;
   u_rol.value = r;
@@ -595,30 +611,27 @@ function editar(u, p, n, r, a, per) {
   modalUsuario.style.display = "flex";
 }
 
-function cerrarUsuario() {
+function cerrarUsuario(){
   modalUsuario.style.display = "none";
 }
 
-function limpiar() {
+function limpiar(){
   u_user.value = "";
   u_pass.value = "";
   u_nombre.value = "";
   u_rol.value = "ADMIN";
   u_activo.value = "SI";
-
   document.querySelectorAll(".permissions input")
     .forEach(c => c.checked = false);
 }
 
 /* ================= GUARDAR ================= */
-async function guardarUsuario() {
-
+async function guardarUsuario(){
   const permisos = [...document.querySelectorAll(".permissions input:checked")]
-    .map(c => c.value)
-    .join(",");
+    .map(c => c.value).join(",");
 
   const fd = new FormData();
-  fd.append("action", modo === "crear" ? "crearUsuario" : "editarUsuario");
+  fd.append("action", modo==="crear" ? "crearUsuario" : "editarUsuario");
   fd.append("username", u_user.value);
   fd.append("password", u_pass.value);
   fd.append("nombre", u_nombre.value);
@@ -626,25 +639,33 @@ async function guardarUsuario() {
   fd.append("activo", u_activo.value);
   fd.append("permisos", permisos);
 
-  await fetch(API, { method: "POST", body: fd });
-
+  await fetch(API, { method:"POST", body:fd });
   cerrarUsuario();
   cargarUsuarios();
 }
 
 /* ================= ELIMINAR ================= */
-async function eliminarUsuario(u) {
-  if (!confirm("Eliminar " + u + "?")) return;
+async function eliminarUsuario(u){
+  if(!confirm("Eliminar "+u+"?")) return;
 
   const fd = new FormData();
-  fd.append("action", "eliminarUsuario");
-  fd.append("username", u);
+  fd.append("action","eliminarUsuario");
+  fd.append("username",u);
 
-  await fetch(API, { method: "POST", body: fd });
+  await fetch(API, { method:"POST", body:fd });
   cargarUsuarios();
 }
-</script>
 
+/* ================= UTIL ================= */
+function esc(t){
+  return String(t||"")
+    .replace(/\\/g,"\\\\")
+    .replace(/'/g,"\\'")
+    .replace(/"/g,'\\"')
+    .replace(/\n/g," ");
+}
+</script>   
+ 
 
 
 <script src="segurity.js"></script>
