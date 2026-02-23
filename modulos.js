@@ -1,6 +1,5 @@
 /* ======================================================
-   MODULOS.JS – CRUD POR ID (MODAL + TABLA + TARJETAS)
-   VERSION FINAL ESTABLE PARA APPS SCRIPT
+   MODULOS.JS – CRUD COMPLETO (TABLA + TARJETAS + MODAL)
 ====================================================== */
 
 /* ================= CONFIG ================= */
@@ -16,6 +15,7 @@ let MODULO_ID = null;
 let modalModulo,
     modalListaModulos,
     tablaModulos,
+    modulosCards,
     m_nombre,
     m_archivo,
     m_icono,
@@ -30,13 +30,13 @@ document.addEventListener("DOMContentLoaded", () => {
   modalModulo       = document.getElementById("modalModulo");
   modalListaModulos = document.getElementById("modalListaModulos");
   tablaModulos      = document.getElementById("tablaModulos");
+  modulosCards      = document.getElementById("modulosCards");
 
   m_nombre  = document.getElementById("m_nombre");
   m_archivo = document.getElementById("m_archivo");
   m_icono   = document.getElementById("m_icono");
   m_permiso = document.getElementById("m_permiso");
   m_activo  = document.getElementById("m_activo");
-
 });
 
 /* ======================================================
@@ -69,11 +69,16 @@ async function cargarModulos(){
 
   tablaModulos.innerHTML =
     `<tr><td colspan="5">Cargando…</td></tr>`;
+  modulosCards.innerHTML = "";
 
   try{
-    const r = await fetch(API_MODULOS + "?action=listarModulos");
-    const d = await r.json();
+    const r = await fetch(API_MODULOS, {
+      method: "POST",
+      headers: { "Content-Type":"text/plain;charset=UTF-8" },
+      body: JSON.stringify({ action:"listarModulos" })
+    });
 
+    const d = await r.json();
     MODULOS = d.data || [];
     renderModulos();
 
@@ -89,51 +94,75 @@ async function cargarModulos(){
 ====================================================== */
 function renderModulos(){
 
-  const cards = document.getElementById("modulosCards");
   tablaModulos.innerHTML = "";
-  cards.innerHTML = "";
+  modulosCards.innerHTML = "";
 
   if(!MODULOS.length){
     tablaModulos.innerHTML =
       `<tr><td colspan="5">Sin módulos</td></tr>`;
-    cards.innerHTML =
+    modulosCards.innerHTML =
       `<p style="text-align:center">Sin módulos</p>`;
     return;
   }
 
   MODULOS.forEach(m => {
 
+    const id      = m[0];
+    const nombre  = m[1];
+    const archivo = m[2];
+    const icono   = m[3] || "📦";
+    const permiso = m[4];
+    const activo  = m[5];
+
+    /* ===== TABLA ===== */
     tablaModulos.innerHTML += `
       <tr>
-        <td>${m[1]}</td>
-        <td>${m[2]}</td>
-        <td>${m[4]}</td>
-        <td>${m[5]}</td>
+        <td>${nombre}</td>
+        <td>${archivo}</td>
+        <td>${permiso}</td>
+        <td>${activo}</td>
         <td>
           <button class="btn-edit"
-            onclick="editarModulo(${m[0]},'${escapeJS(m[1])}','${escapeJS(m[2])}','${escapeJS(m[3])}','${escapeJS(m[4])}','${m[5]}')">
+            onclick="editarModulo(
+              ${id},
+              '${escapeJS(nombre)}',
+              '${escapeJS(archivo)}',
+              '${escapeJS(icono)}',
+              '${escapeJS(permiso)}',
+              '${activo}'
+            )">
             Editar
           </button>
           <button class="btn-danger"
-            onclick="eliminarModulo(${m[0]})">
+            onclick="eliminarModulo(${id})">
             Eliminar
           </button>
         </td>
       </tr>`;
 
-    cards.innerHTML += `
+    /* ===== TARJETA MÓVIL ===== */
+    modulosCards.innerHTML += `
       <div class="modulo-card">
-        <span class="modulo-badge ${m[5]==='SI'?'activo':'inactivo'}">${m[5]}</span>
-        <h4>${m[3] || "📦"} ${m[1]}</h4>
-        <p><b>Archivo:</b> ${m[2]}</p>
-        <p><b>Permiso:</b> ${m[4]}</p>
+        <span class="modulo-badge ${activo==='SI'?'activo':'inactivo'}">
+          ${activo}
+        </span>
+        <h4>${icono} ${nombre}</h4>
+        <p><b>Archivo:</b> ${archivo}</p>
+        <p><b>Permiso:</b> ${permiso}</p>
         <div class="modulo-actions">
           <button class="btn-edit"
-            onclick="editarModulo(${m[0]},'${escapeJS(m[1])}','${escapeJS(m[2])}','${escapeJS(m[3])}','${escapeJS(m[4])}','${m[5]}')">
+            onclick="editarModulo(
+              ${id},
+              '${escapeJS(nombre)}',
+              '${escapeJS(archivo)}',
+              '${escapeJS(icono)}',
+              '${escapeJS(permiso)}',
+              '${activo}'
+            )">
             Editar
           </button>
           <button class="btn-danger"
-            onclick="eliminarModulo(${m[0]})">
+            onclick="eliminarModulo(${id})">
             Eliminar
           </button>
         </div>
@@ -171,7 +200,7 @@ function limpiarModulo(){
 }
 
 /* ======================================================
-   GUARDAR – APPS SCRIPT COMPATIBLE
+   GUARDAR
 ====================================================== */
 async function guardarModulo(){
 
@@ -180,19 +209,26 @@ async function guardarModulo(){
     return;
   }
 
-  const fd = new FormData();
-  fd.append("action", MODO_MODULO === "editar" ? "editarModulo" : "crearModulo");
-  fd.append("id", MODULO_ID || "");
-  fd.append("nombre", m_nombre.value);
-  fd.append("archivo", m_archivo.value);
-  fd.append("icono", m_icono.value);
-  fd.append("permiso", m_permiso.value);
-  fd.append("activo", m_activo.value);
+  const payload = {
+    action : MODO_MODULO === "editar" ? "editarModulo" : "crearModulo",
+    id     : MODULO_ID,
+    nombre : m_nombre.value,
+    archivo: m_archivo.value,
+    icono  : m_icono.value,
+    permiso: m_permiso.value,
+    activo : m_activo.value
+  };
 
   try{
-    await fetch(API_MODULOS, { method:"POST", body:fd });
+    await fetch(API_MODULOS,{
+      method:"POST",
+      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+      body: JSON.stringify(payload)
+    });
+
     cerrarModulo();
     cargarModulos();
+
   }catch(e){
     console.error(e);
     alert("Error al guardar módulo");
@@ -200,19 +236,24 @@ async function guardarModulo(){
 }
 
 /* ======================================================
-   ELIMINAR – APPS SCRIPT COMPATIBLE
+   ELIMINAR
 ====================================================== */
 async function eliminarModulo(id){
 
   if(!confirm("¿Eliminar módulo?")) return;
 
-  const fd = new FormData();
-  fd.append("action","eliminarModulo");
-  fd.append("id",id);
-
   try{
-    await fetch(API_MODULOS,{ method:"POST", body:fd });
+    await fetch(API_MODULOS,{
+      method:"POST",
+      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+      body: JSON.stringify({
+        action:"eliminarModulo",
+        id
+      })
+    });
+
     cargarModulos();
+
   }catch(e){
     console.error(e);
     alert("Error al eliminar módulo");
@@ -223,7 +264,7 @@ async function eliminarModulo(id){
    UTIL
 ====================================================== */
 function escapeJS(text){
-  return String(text)
+  return String(text || "")
     .replace(/\\/g,"\\\\")
     .replace(/'/g,"\\'")
     .replace(/"/g,'\\"')
