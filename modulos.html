@@ -102,7 +102,6 @@ tr{border-bottom:1px solid #e5e7eb}
     <tbody id="tabla"></tbody>
   </table>
 
-  <!-- MENSAJE / DEBUG -->
   <div id="msg" class="msg" style="display:none"></div>
 </div>
 
@@ -157,7 +156,7 @@ let modulos = [];
 let modo = "crear";
 
 /* ======================================================
-   SEGURIDAD (IGUAL QUE USUARIOS)
+   TOKEN (IGUAL QUE USUARIOS)
 ====================================================== */
 function getToken(){
   const token = localStorage.getItem("token");
@@ -170,7 +169,7 @@ function getToken(){
 }
 
 /* ======================================================
-   CARGAR MODULOS
+   CARGAR MODULOS (ACCION PERMITIDA)
 ====================================================== */
 async function cargarModulos(){
 
@@ -186,14 +185,14 @@ async function cargarModulos(){
       method:"POST",
       headers:{ "Content-Type":"text/plain;charset=UTF-8" },
       body: JSON.stringify({
-        action:"listarModulos",
+        action: "listarTabla",
+        nombre: "MODULOS",
         token
       })
     });
 
     const res = await r.json();
 
-    /* DEBUG VISIBLE */
     msg.style.display="block";
     msg.innerText = "Respuesta backend:\n" + JSON.stringify(res,null,2);
 
@@ -223,7 +222,7 @@ async function cargarModulos(){
 }
 
 /* ======================================================
-   RENDER (ARRAY POR ÍNDICE, IGUAL QUE USUARIOS)
+   RENDER (ARRAY POR ÍNDICE)
 ====================================================== */
 function renderModulos(data){
 
@@ -294,7 +293,7 @@ function limpiar(){
 }
 
 /* ======================================================
-   GUARDAR
+   GUARDAR (MISMA ACCION QUE TU BACKEND USE)
 ====================================================== */
 async function guardarModulo(){
 
@@ -305,14 +304,18 @@ async function guardarModulo(){
     method:"POST",
     headers:{ "Content-Type":"text/plain;charset=UTF-8" },
     body: JSON.stringify({
-      action: modo==="crear" ? "crearModulo" : "editarModulo",
+      action: modo === "crear" ? "guardarTabla" : "guardarTabla",
+      nombre: "MODULOS",
       token,
-      id: m_id.value,
-      nombre: m_nombre.value,
-      archivo: m_archivo.value,
-      icono: m_icono.value,
-      permiso: m_permiso.value,
-      activo: m_activo.value
+      fila: m_id.value,
+      data: [
+        m_id.value,
+        m_nombre.value,
+        m_archivo.value,
+        m_icono.value,
+        m_permiso.value,
+        m_activo.value
+      ]
     })
   });
 
@@ -331,9 +334,10 @@ async function eliminarModulo(id){
     method:"POST",
     headers:{ "Content-Type":"text/plain;charset=UTF-8" },
     body: JSON.stringify({
-      action:"eliminarModulo",
-      token: localStorage.getItem("token"),
-      id
+      action:"eliminarTabla",
+      nombre:"MODULOS",
+      token,
+      fila:id
     })
   });
 
