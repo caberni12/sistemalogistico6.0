@@ -2,76 +2,68 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Gestión de Módulos</title>
+<title>Módulos</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-*{box-sizing:border-box;font-family:system-ui,-apple-system,BlinkMacSystemFont}
-body{margin:0;padding:20px;background:#f4f6f9;color:#333}
+*{box-sizing:border-box;font-family:system-ui}
+body{margin:0;padding:20px;background:#f4f6f9}
 
 .container{
-  max-width:1200px;margin:auto;background:#fff;
-  border-radius:12px;padding:20px;
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
   box-shadow:0 10px 30px rgba(0,0,0,.08)
 }
 
 .header{
-  display:flex;justify-content:space-between;
-  align-items:center;gap:10px;flex-wrap:wrap
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:15px
 }
-.header h1{margin:0;font-size:22px}
-.header .buttons{display:flex;gap:10px}
 
 button{
-  border:none;padding:10px 16px;border-radius:8px;
-  cursor:pointer;font-weight:600
+  border:none;
+  padding:10px 16px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:600
 }
 .primary{background:#2563eb;color:#fff}
 .secondary{background:#64748b;color:#fff}
-
-table{width:100%;border-collapse:collapse;margin-top:15px}
-thead{background:#f1f5f9}
-th,td{padding:12px;text-align:left;font-size:14px}
-th{font-weight:600}
-tr{border-bottom:1px solid #e5e7eb}
-
-.actions button{padding:6px 10px;border-radius:6px}
 .edit{background:#22c55e;color:#fff}
 .delete{background:#ef4444;color:#fff}
 
-.msg{
-  margin-top:15px;
-  padding:12px;
-  border-radius:8px;
-  background:#f8fafc;
-  border:1px solid #e5e7eb;
-  font-size:13px;
-  white-space:pre-wrap;
-}
+table{width:100%;border-collapse:collapse}
+thead{background:#f1f5f9}
+th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left}
 
-/* MODAL */
 .modal{
-  position:fixed;inset:0;background:rgba(0,0,0,.4);
-  display:none;justify-content:center;align-items:center;z-index:999
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.4);
+  display:none;
+  justify-content:center;
+  align-items:center
 }
 .modal.active{display:flex}
 .modal-content{
-  background:#fff;width:100%;max-width:480px;
-  border-radius:12px;padding:20px
+  background:#fff;
+  width:100%;
+  max-width:420px;
+  padding:20px;
+  border-radius:12px
 }
-.form-group{margin-bottom:12px}
-.form-group label{display:block;font-size:13px;margin-bottom:4px}
+.form-group{margin-bottom:10px}
+.form-group label{display:block;font-size:13px}
 .form-group input,.form-group select{
-  width:100%;padding:10px;border-radius:6px;border:1px solid #d1d5db
-}
-.modal-actions{display:flex;gap:10px;justify-content:flex-end}
-
-@media(max-width:700px){
-  table,thead,tbody,tr,th,td{display:block;width:100%}
-  thead{display:none}
-  tr{background:#f9fafb;margin-bottom:15px;padding:10px;border-radius:8px}
-  td{display:flex;justify-content:space-between;padding:6px 0}
-  td::before{content:attr(data-label);font-weight:600}
+  width:100%;
+  padding:8px;
+  border-radius:6px;
+  border:1px solid #ccc
 }
 </style>
 </head>
@@ -80,10 +72,10 @@ tr{border-bottom:1px solid #e5e7eb}
 
 <div class="container">
   <div class="header">
-    <h1>Módulos del Sistema</h1>
-    <div class="buttons">
-      <button id="btnLoad" class="secondary" onclick="cargarModulos()">Cargar módulos</button>
-      <button class="primary" onclick="abrirCrear()">+ Nuevo Módulo</button>
+    <h2>Módulos</h2>
+    <div>
+      <button class="secondary" onclick="cargar()">Cargar</button>
+      <button class="primary" onclick="nuevo()">+ Nuevo</button>
     </div>
   </div>
 
@@ -101,247 +93,121 @@ tr{border-bottom:1px solid #e5e7eb}
     </thead>
     <tbody id="tabla"></tbody>
   </table>
-
-  <div id="msg" class="msg" style="display:none"></div>
 </div>
 
 <!-- MODAL -->
 <div class="modal" id="modal">
   <div class="modal-content">
-    <h2 id="tituloModal">Nuevo Módulo</h2>
+    <h3 id="titulo">Nuevo módulo</h3>
 
+    <div class="form-group"><label>ID</label><input id="id"></div>
+    <div class="form-group"><label>Nombre</label><input id="nombre"></div>
+    <div class="form-group"><label>Archivo</label><input id="archivo"></div>
+    <div class="form-group"><label>Icono</label><input id="icono"></div>
+    <div class="form-group"><label>Permiso</label><input id="permiso"></div>
     <div class="form-group">
-      <label>ID</label>
-      <input id="m_id">
-    </div>
-    <div class="form-group">
-      <label>NOMBRE</label>
-      <input id="m_nombre">
-    </div>
-    <div class="form-group">
-      <label>ARCHIVO</label>
-      <input id="m_archivo" placeholder="ventas.html">
-    </div>
-    <div class="form-group">
-      <label>ICONO</label>
-      <input id="m_icono" placeholder="📦">
-    </div>
-    <div class="form-group">
-      <label>PERMISO</label>
-      <input id="m_permiso" placeholder="admin">
-    </div>
-    <div class="form-group">
-      <label>ACTIVO</label>
-      <select id="m_activo">
-        <option value="SI">SI</option>
-        <option value="NO">NO</option>
-      </select>
+      <label>Activo</label>
+      <select id="activo"><option>SI</option><option>NO</option></select>
     </div>
 
-    <div class="modal-actions">
-      <button class="secondary" onclick="cerrar()">Cancelar</button>
-      <button class="primary" onclick="guardarModulo()">Guardar</button>
-    </div>
+    <button class="primary" onclick="guardar()">Guardar</button>
+    <button class="secondary" onclick="cerrar()">Cancelar</button>
   </div>
 </div>
 
 <script>
-/* ======================================================
-   CONFIG
-====================================================== */
 const API =
 "https://script.google.com/macros/s/AKfycbyqukiXC5BZKB4iR45zH1gFWDF1Nxk5DfNADr1YZz2W5Gue86hyoBIBsgk-KH5vPy8F/exec";
 
-let modulos = [];
-let modo = "crear";
+let modo="crear";
 
-/* ======================================================
-   TOKEN (IGUAL QUE USUARIOS)
-====================================================== */
+/* TOKEN */
 function getToken(){
-  const token = localStorage.getItem("token");
-  if(!token){
-    alert("Sesión no válida");
-    location.href = "index.html";
-    return null;
-  }
-  return token;
+  const t=localStorage.getItem("token");
+  if(!t){ alert("Sesión inválida"); location.href="index.html"; }
+  return t;
 }
 
-/* ======================================================
-   CARGAR MODULOS (ACCION PERMITIDA)
-====================================================== */
-async function cargarModulos(){
-
-  const token = getToken();
-  if(!token) return;
-
-  btnLoad.innerText = "Cargando…";
-  msg.style.display="none";
-  tabla.innerHTML = "";
-
-  try{
-    const r = await fetch(API,{
-      method:"POST",
-      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
-      body: JSON.stringify({
-        action: "listarTabla",
-        nombre: "MODULOS",
-        token
-      })
+/* LISTAR → GET */
+function cargar(){
+  fetch(API+"?action=listarModulos")
+    .then(r=>r.json())
+    .then(res=>{
+      tabla.innerHTML="";
+      if(!res.data.length){
+        tabla.innerHTML=`<tr><td colspan="7">Sin módulos</td></tr>`;
+        return;
+      }
+      res.data.forEach(m=>{
+        tabla.innerHTML+=`
+        <tr>
+          <td>${m[0]}</td>
+          <td>${m[1]}</td>
+          <td>${m[2]}</td>
+          <td>${m[3]}</td>
+          <td>${m[4]}</td>
+          <td>${m[5]}</td>
+          <td>
+            <button class="edit" onclick='editar(${JSON.stringify(m)})'>Editar</button>
+            <button class="delete" onclick='eliminar("${m[0]}")'>Eliminar</button>
+          </td>
+        </tr>`;
+      });
     });
-
-    const res = await r.json();
-
-    msg.style.display="block";
-    msg.innerText = "Respuesta backend:\n" + JSON.stringify(res,null,2);
-
-    if(!res.ok){
-      throw res.msg || "Error backend";
-    }
-
-    modulos = Array.isArray(res.data) ? res.data : [];
-
-    if(!modulos.length){
-      tabla.innerHTML =
-        `<tr><td colspan="7">Sin módulos</td></tr>`;
-      return;
-    }
-
-    renderModulos(modulos);
-
-  }catch(err){
-    console.error(err);
-    tabla.innerHTML =
-      `<tr><td colspan="7">Error al cargar módulos</td></tr>`;
-    msg.style.display="block";
-    msg.innerText = "ERROR:\n" + err;
-  }
-
-  btnLoad.innerText = "Cargar módulos";
 }
 
-/* ======================================================
-   RENDER (ARRAY POR ÍNDICE)
-====================================================== */
-function renderModulos(data){
-
-  tabla.innerHTML = "";
-
-  data.forEach(m => {
-
-    const id      = m[0];
-    const nombre  = m[1];
-    const archivo = m[2];
-    const icono   = m[3];
-    const permiso = m[4];
-    const activo  = m[5];
-
-    tabla.innerHTML += `
-      <tr>
-        <td data-label="ID">${id}</td>
-        <td data-label="NOMBRE">${nombre}</td>
-        <td data-label="ARCHIVO">${archivo}</td>
-        <td data-label="ICONO">${icono}</td>
-        <td data-label="PERMISO">${permiso}</td>
-        <td data-label="ACTIVO">${activo}</td>
-        <td data-label="ACCIONES" class="actions">
-          <button class="edit"
-            onclick="editarModulo(
-              '${id}','${nombre}','${archivo}',
-              '${icono}','${permiso}','${activo}'
-            )">Editar</button>
-          <button class="delete"
-            onclick="eliminarModulo('${id}')">Eliminar</button>
-        </td>
-      </tr>`;
-  });
-}
-
-/* ======================================================
-   MODAL
-====================================================== */
-function abrirCrear(){
+function nuevo(){
   modo="crear";
-  tituloModal.innerText="Crear Módulo";
-  limpiar();
+  titulo.innerText="Nuevo módulo";
+  id.value=nombre.value=archivo.value=icono.value=permiso.value="";
+  activo.value="SI";
   modal.classList.add("active");
 }
 
-function editarModulo(id,n,a,i,p,ac){
+function editar(m){
   modo="editar";
-  m_id.value=id;
-  m_nombre.value=n;
-  m_archivo.value=a;
-  m_icono.value=i;
-  m_permiso.value=p;
-  m_activo.value=ac;
+  titulo.innerText="Editar módulo";
+  id.value=m[0];
+  nombre.value=m[1];
+  archivo.value=m[2];
+  icono.value=m[3];
+  permiso.value=m[4];
+  activo.value=m[5];
   modal.classList.add("active");
+}
+
+function guardar(){
+  fetch(API,{
+    method:"POST",
+    headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+    body:JSON.stringify({
+      action: modo==="crear"?"crearModulo":"editarModulo",
+      token:getToken(),
+      id:id.value,
+      nombre:nombre.value,
+      archivo:archivo.value,
+      icono:icono.value,
+      permiso:permiso.value,
+      activo:activo.value
+    })
+  }).then(()=>{ cerrar(); cargar(); });
+}
+
+function eliminar(idm){
+  if(!confirm("Eliminar módulo "+idm+"?"))return;
+  fetch(API,{
+    method:"POST",
+    headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+    body:JSON.stringify({
+      action:"eliminarModulo",
+      token:getToken(),
+      id:idm
+    })
+  }).then(cargar);
 }
 
 function cerrar(){
   modal.classList.remove("active");
-}
-
-function limpiar(){
-  m_id.value="";
-  m_nombre.value="";
-  m_archivo.value="";
-  m_icono.value="";
-  m_permiso.value="";
-  m_activo.value="SI";
-}
-
-/* ======================================================
-   GUARDAR (MISMA ACCION QUE TU BACKEND USE)
-====================================================== */
-async function guardarModulo(){
-
-  const token = getToken();
-  if(!token) return;
-
-  await fetch(API,{
-    method:"POST",
-    headers:{ "Content-Type":"text/plain;charset=UTF-8" },
-    body: JSON.stringify({
-      action: modo === "crear" ? "guardarTabla" : "guardarTabla",
-      nombre: "MODULOS",
-      token,
-      fila: m_id.value,
-      data: [
-        m_id.value,
-        m_nombre.value,
-        m_archivo.value,
-        m_icono.value,
-        m_permiso.value,
-        m_activo.value
-      ]
-    })
-  });
-
-  cerrar();
-  cargarModulos();
-}
-
-/* ======================================================
-   ELIMINAR
-====================================================== */
-async function eliminarModulo(id){
-
-  if(!confirm("Eliminar módulo "+id+" ?")) return;
-
-  await fetch(API,{
-    method:"POST",
-    headers:{ "Content-Type":"text/plain;charset=UTF-8" },
-    body: JSON.stringify({
-      action:"eliminarTabla",
-      nombre:"MODULOS",
-      token,
-      fila:id
-    })
-  });
-
-  cargarModulos();
 }
 </script>
 
