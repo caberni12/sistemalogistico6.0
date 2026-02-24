@@ -10,13 +10,14 @@
 body{margin:0;padding:20px;background:#f4f6f9;color:#333}
 
 .container{
-  max-width:1200px;margin:auto;background:#fff;border-radius:12px;
-  padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.08)
+  max-width:1200px;margin:auto;background:#fff;
+  border-radius:12px;padding:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,.08)
 }
 
 .header{
-  display:flex;justify-content:space-between;align-items:center;
-  gap:10px;flex-wrap:wrap;margin-bottom:12px
+  display:flex;justify-content:space-between;
+  align-items:center;gap:10px;flex-wrap:wrap
 }
 .header h1{margin:0;font-size:22px}
 .header .buttons{display:flex;gap:10px}
@@ -28,31 +29,16 @@ button{
 .primary{background:#2563eb;color:#fff}
 .secondary{background:#64748b;color:#fff}
 
-table{width:100%;border-collapse:collapse;margin-top:10px}
+table{width:100%;border-collapse:collapse;margin-top:15px}
 thead{background:#f1f5f9}
 th,td{padding:12px;text-align:left;font-size:14px}
 th{font-weight:600}
 tr{border-bottom:1px solid #e5e7eb}
 
-.icono{font-size:18px}
-
 .actions button{padding:6px 10px;border-radius:6px}
 .edit{background:#22c55e;color:#fff}
 .delete{background:#ef4444;color:#fff}
 
-.badge{
-  padding:4px 10px;border-radius:999px;
-  font-size:12px;font-weight:600
-}
-.si{background:#dcfce7;color:#166534}
-.no{background:#fee2e2;color:#991b1b}
-
-.loader,.empty{
-  text-align:center;padding:20px;font-weight:600;display:none
-}
-.empty{color:#64748b}
-
-/* MODAL */
 .modal{
   position:fixed;inset:0;background:rgba(0,0,0,.4);
   display:none;justify-content:center;align-items:center;z-index:999
@@ -68,10 +54,7 @@ tr{border-bottom:1px solid #e5e7eb}
   width:100%;padding:10px;border-radius:6px;border:1px solid #d1d5db
 }
 .modal-actions{display:flex;gap:10px;justify-content:flex-end}
-.save{background:#2563eb;color:#fff}
-.cancel{background:#9ca3af;color:#fff}
 
-/* RESPONSIVE REAL */
 @media(max-width:700px){
   table,thead,tbody,tr,th,td{display:block;width:100%}
   thead{display:none}
@@ -88,13 +71,10 @@ tr{border-bottom:1px solid #e5e7eb}
   <div class="header">
     <h1>Módulos del Sistema</h1>
     <div class="buttons">
-      <button class="secondary" onclick="cargar()">Cargar información</button>
-      <button class="primary" onclick="nuevo()">+ Nuevo Módulo</button>
+      <button id="btnLoad" class="secondary" onclick="cargarModulos()">Cargar módulos</button>
+      <button class="primary" onclick="abrirCrear()">+ Nuevo Módulo</button>
     </div>
   </div>
-
-  <div class="loader" id="loader">Cargando información…</div>
-  <div class="empty" id="empty">No hay módulos registrados</div>
 
   <table>
     <thead>
@@ -116,126 +96,228 @@ tr{border-bottom:1px solid #e5e7eb}
 <div class="modal" id="modal">
   <div class="modal-content">
     <h2 id="tituloModal">Nuevo Módulo</h2>
-    <input type="hidden" id="id">
 
-    <div class="form-group"><label>NOMBRE</label><input id="nombre"></div>
-    <div class="form-group"><label>ARCHIVO</label><input id="archivo" placeholder="ventas.html"></div>
-    <div class="form-group"><label>ICONO</label><input id="icono" placeholder="📦"></div>
-    <div class="form-group"><label>PERMISO</label><input id="permiso" placeholder="admin"></div>
+    <div class="form-group">
+      <label>ID</label>
+      <input id="m_id">
+    </div>
+
+    <div class="form-group">
+      <label>NOMBRE</label>
+      <input id="m_nombre">
+    </div>
+
+    <div class="form-group">
+      <label>ARCHIVO</label>
+      <input id="m_archivo" placeholder="ventas.html">
+    </div>
+
+    <div class="form-group">
+      <label>ICONO</label>
+      <input id="m_icono" placeholder="📦">
+    </div>
+
+    <div class="form-group">
+      <label>PERMISO</label>
+      <input id="m_permiso" placeholder="admin">
+    </div>
+
     <div class="form-group">
       <label>ACTIVO</label>
-      <select id="activo"><option value="SI">SI</option><option value="NO">NO</option></select>
+      <select id="m_activo">
+        <option value="SI">SI</option>
+        <option value="NO">NO</option>
+      </select>
     </div>
 
     <div class="modal-actions">
-      <button class="cancel" onclick="cerrar()">Cancelar</button>
-      <button class="save" onclick="guardar()">Guardar</button>
+      <button class="secondary" onclick="cerrar()">Cancelar</button>
+      <button class="primary" onclick="guardarModulo()">Guardar</button>
     </div>
   </div>
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbyqukiXC5BZKB4iR45zH1gFWDF1Nxk5DfNADr1YZz2W5Gue86hyoBIBsgk-KH5vPy8F/exec";
+/* ======================================================
+   CONFIG
+====================================================== */
+const API =
+"https://script.google.com/macros/s/AKfycbyqukiXC5BZKB4iR45zH1gFWDF1Nxk5DfNADr1YZz2W5Gue86hyoBIBsgk-KH5vPy8F/exec";
 
+let modulos = [];
 let modo = "crear";
-let MODULOS = [];
 
-document.addEventListener("DOMContentLoaded", cargar);
-
-function cargar(){
-  loader.style.display="block";
-  empty.style.display="none";
-  tabla.innerHTML="";
-
-  fetch(API + "?action=listar")
-    .then(r => r.text())           // ← robusto ante HTML/no-JSON
-    .then(txt => {
-      let data;
-      try { data = JSON.parse(txt); }
-      catch(e){ throw new Error("Respuesta no JSON"); }
-
-      loader.style.display="none";
-      MODULOS = Array.isArray(data) ? data : [];
-
-      if(MODULOS.length === 0){
-        empty.style.display="block";
-        empty.innerText = "No hay módulos registrados";
-        return;
-      }
-
-      MODULOS.forEach((m,i)=>{
-        tabla.innerHTML += `
-          <tr>
-            <td data-label="ID">${m.id ?? ""}</td>
-            <td data-label="NOMBRE">${m.nombre ?? ""}</td>
-            <td data-label="ARCHIVO">${m.archivo ?? ""}</td>
-            <td data-label="ICONO" class="icono">${m.icono || "📁"}</td>
-            <td data-label="PERMISO">${m.permiso ?? ""}</td>
-            <td data-label="ACTIVO">
-              <span class="badge ${m.activo==="SI"?"si":"no"}">${m.activo ?? ""}</span>
-            </td>
-            <td data-label="ACCIONES" class="actions">
-              <button class="edit" onclick="editar(${i})">✏️</button>
-              <button class="delete" onclick="eliminar('${m.id}')">🗑️</button>
-            </td>
-          </tr>`;
-      });
-    })
-    .catch(err=>{
-      loader.style.display="none";
-      empty.style.display="block";
-      empty.innerText = "Error al cargar información";
-      console.error("ERROR:", err);
-    });
-}
-
-function nuevo(){
-  modo="crear";
-  id.value=""; nombre.value=""; archivo.value="";
-  icono.value=""; permiso.value=""; activo.value="SI";
-  tituloModal.innerText="Nuevo Módulo";
-  abrir();
-}
-
-function editar(i){
-  const m = MODULOS[i];
-  modo="editar";
-  id.value = m.id ?? "";
-  nombre.value = m.nombre ?? "";
-  archivo.value = m.archivo ?? "";
-  icono.value = m.icono ?? "";
-  permiso.value = m.permiso ?? "";
-  activo.value = m.activo ?? "SI";
-  tituloModal.innerText="Editar Módulo";
-  abrir();
-}
-
-function guardar(){
-  fetch(API,{
-    method:"POST",
-    body: JSON.stringify({
-      action: modo,
-      id: id.value,
-      nombre: nombre.value,
-      archivo: archivo.value,
-      icono: icono.value,
-      permiso: permiso.value,
-      activo: activo.value
-    })
-  }).then(()=>{ cerrar(); cargar(); });
-}
-
-function eliminar(idm){
-  if(confirm("¿Eliminar módulo?")){
-    fetch(API,{
-      method:"POST",
-      body: JSON.stringify({ action:"eliminar", id:idm })
-    }).then(()=>cargar());
+/* ======================================================
+   SEGURIDAD
+====================================================== */
+function getToken(){
+  const token = localStorage.getItem("token");
+  if(!token){
+    alert("Sesión no válida");
+    location.href = "index.html";
+    return null;
   }
+  return token;
 }
 
-function abrir(){ modal.classList.add("active"); }
-function cerrar(){ modal.classList.remove("active"); }
+/* ======================================================
+   CARGAR MODULOS (MISMO PATRÓN QUE USUARIOS)
+====================================================== */
+async function cargarModulos(){
+
+  const token = getToken();
+  if(!token) return;
+
+  btnLoad.innerText = "Cargando…";
+
+  try{
+    const r = await fetch(API,{
+      method:"POST",
+      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+      body: JSON.stringify({
+        action:"listarModulos",
+        token
+      })
+    });
+
+    const res = await r.json();
+    if(!res.ok) throw res.msg;
+
+    modulos = Array.isArray(res.data) ? res.data : [];
+    renderModulos(modulos);
+
+  }catch(err){
+    console.error(err);
+    tabla.innerHTML =
+      `<tr><td colspan="7">Error al cargar módulos</td></tr>`;
+  }
+
+  btnLoad.innerText = "Cargar módulos";
+}
+
+/* ======================================================
+   RENDER
+====================================================== */
+function renderModulos(data){
+
+  tabla.innerHTML = "";
+
+  if(!data.length){
+    tabla.innerHTML =
+      `<tr><td colspan="7">Sin módulos</td></tr>`;
+    return;
+  }
+
+  data.forEach(m => {
+
+    const id      = m[0];
+    const nombre  = m[1];
+    const archivo = m[2];
+    const icono   = m[3];
+    const permiso = m[4];
+    const activo  = m[5];
+
+    tabla.innerHTML += `
+      <tr>
+        <td data-label="ID">${id}</td>
+        <td data-label="NOMBRE">${nombre}</td>
+        <td data-label="ARCHIVO">${archivo}</td>
+        <td data-label="ICONO">${icono}</td>
+        <td data-label="PERMISO">${permiso}</td>
+        <td data-label="ACTIVO">${activo}</td>
+        <td data-label="ACCIONES" class="actions">
+          <button class="edit"
+            onclick="editarModulo(
+              '${id}','${nombre}','${archivo}',
+              '${icono}','${permiso}','${activo}'
+            )">Editar</button>
+          <button class="delete"
+            onclick="eliminarModulo('${id}')">Eliminar</button>
+        </td>
+      </tr>`;
+  });
+}
+
+/* ======================================================
+   MODAL
+====================================================== */
+function abrirCrear(){
+  modo="crear";
+  tituloModal.innerText="Crear Módulo";
+  limpiar();
+  modal.classList.add("active");
+}
+
+function editarModulo(id,n,a,i,p,ac){
+  modo="editar";
+  m_id.value=id;
+  m_nombre.value=n;
+  m_archivo.value=a;
+  m_icono.value=i;
+  m_permiso.value=p;
+  m_activo.value=ac;
+  modal.classList.add("active");
+}
+
+function cerrar(){
+  modal.classList.remove("active");
+}
+
+function limpiar(){
+  m_id.value="";
+  m_nombre.value="";
+  m_archivo.value="";
+  m_icono.value="";
+  m_permiso.value="";
+  m_activo.value="SI";
+}
+
+/* ======================================================
+   GUARDAR
+====================================================== */
+async function guardarModulo(){
+
+  const token = getToken();
+  if(!token) return;
+
+  await fetch(API,{
+    method:"POST",
+    headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+    body: JSON.stringify({
+      action: modo==="crear" ? "crearModulo" : "editarModulo",
+      token,
+      id: m_id.value,
+      nombre: m_nombre.value,
+      archivo: m_archivo.value,
+      icono: m_icono.value,
+      permiso: m_permiso.value,
+      activo: m_activo.value
+    })
+  });
+
+  cerrar();
+  cargarModulos();
+}
+
+/* ======================================================
+   ELIMINAR
+====================================================== */
+async function eliminarModulo(id){
+
+  if(!confirm("Eliminar módulo "+id+" ?")) return;
+
+  await fetch(API,{
+    method:"POST",
+    headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+    body: JSON.stringify({
+      action:"eliminarModulo",
+      token: localStorage.getItem("token"),
+      id
+    })
+  });
+
+  cargarModulos();
+}
 </script>
 
 </body>
