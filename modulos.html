@@ -2,68 +2,81 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Módulos</title>
+<title>Módulos del Sistema</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-*{box-sizing:border-box;font-family:system-ui}
-body{margin:0;padding:20px;background:#f4f6f9}
+*{box-sizing:border-box;font-family:system-ui,-apple-system,BlinkMacSystemFont}
+body{margin:0;padding:16px;background:#f4f6f9;color:#111}
 
 .container{
-  max-width:1100px;
-  margin:auto;
-  background:#fff;
-  padding:20px;
-  border-radius:12px;
-  box-shadow:0 10px 30px rgba(0,0,0,.08)
+  max-width:1200px;margin:auto;background:#fff;border-radius:12px;
+  padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.08)
 }
 
+/* HEADER */
 .header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:15px
+  display:flex;flex-wrap:wrap;gap:10px;
+  align-items:center;justify-content:space-between
 }
+.header h2{margin:0}
 
-button{
-  border:none;
-  padding:10px 16px;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:600
+/* CONTROLS */
+.controls{
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center
+}
+.controls input,.controls select{
+  padding:8px 10px;border-radius:8px;border:1px solid #e5e7eb
+}
+.controls button{
+  padding:8px 12px;border-radius:8px;border:none;
+  cursor:pointer;font-weight:600
 }
 .primary{background:#2563eb;color:#fff}
 .secondary{background:#64748b;color:#fff}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;margin-top:12px}
+thead{background:#f1f5f9}
+th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:14px}
+.actions button{
+  margin-right:6px;border:none;border-radius:6px;
+  padding:6px 8px;cursor:pointer
+}
 .edit{background:#22c55e;color:#fff}
 .delete{background:#ef4444;color:#fff}
 
-table{width:100%;border-collapse:collapse}
-thead{background:#f1f5f9}
-th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left}
+/* CARDS (MOBILE) */
+.cards{display:none;margin-top:12px;gap:10px}
+.card{
+  background:#f9fafb;border:1px solid #e5e7eb;
+  border-radius:12px;padding:12px
+}
+.card h4{margin:0 0 6px}
+.card .row{font-size:14px;margin:4px 0}
+.card .actions{margin-top:8px}
 
+/* MODAL */
 .modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.4);
-  display:none;
-  justify-content:center;
-  align-items:center
+  position:fixed;inset:0;background:rgba(0,0,0,.4);
+  display:none;justify-content:center;align-items:center;z-index:999
 }
 .modal.active{display:flex}
 .modal-content{
-  background:#fff;
-  width:100%;
-  max-width:420px;
-  padding:20px;
-  border-radius:12px
+  background:#fff;width:100%;max-width:420px;
+  border-radius:12px;padding:16px
 }
 .form-group{margin-bottom:10px}
-.form-group label{display:block;font-size:13px}
+.form-group label{display:block;font-size:13px;margin-bottom:4px}
 .form-group input,.form-group select{
-  width:100%;
-  padding:8px;
-  border-radius:6px;
-  border:1px solid #ccc
+  width:100%;padding:8px;border-radius:6px;border:1px solid #d1d5db
+}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  table{display:none}
+  .cards{display:grid}
 }
 </style>
 </head>
@@ -73,30 +86,37 @@ th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left}
 <div class="container">
   <div class="header">
     <h2>Módulos</h2>
-    <div>
-      <button class="secondary" onclick="cargar()">Cargar</button>
+    <div class="controls">
+      <input id="q" placeholder="Buscar por nombre o archivo">
+      <select id="fActivo">
+        <option value="ALL">Activo: Todos</option>
+        <option value="SI">Activo: SI</option>
+        <option value="NO">Activo: NO</option>
+      </select>
+      <button class="secondary" onclick="aplicarFiltros()">Filtrar</button>
+      <button class="secondary" onclick="mostrarTodo()">Mostrar todo</button>
       <button class="primary" onclick="nuevo()">+ Nuevo</button>
+      <button class="secondary" onclick="cargar()">Cargar</button>
     </div>
   </div>
 
+  <!-- TABLA DESKTOP -->
   <table>
     <thead>
       <tr>
-        <th>ID</th>
-        <th>NOMBRE</th>
-        <th>ARCHIVO</th>
-        <th>ICONO</th>
-        <th>PERMISO</th>
-        <th>ACTIVO</th>
-        <th>ACCIONES</th>
+        <th>ID</th><th>NOMBRE</th><th>ARCHIVO</th>
+        <th>ICONO</th><th>PERMISO</th><th>ACTIVO</th><th>ACCIONES</th>
       </tr>
     </thead>
     <tbody id="tabla"></tbody>
   </table>
+
+  <!-- TARJETAS MÓVIL -->
+  <div id="cards" class="cards"></div>
 </div>
 
 <!-- MODAL -->
-<div class="modal" id="modal">
+<div id="modal" class="modal">
   <div class="modal-content">
     <h3 id="titulo">Nuevo módulo</h3>
 
@@ -110,52 +130,116 @@ th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left}
       <select id="activo"><option>SI</option><option>NO</option></select>
     </div>
 
-    <button class="primary" onclick="guardar()">Guardar</button>
-    <button class="secondary" onclick="cerrar()">Cancelar</button>
+    <div class="modal-actions">
+      <button class="secondary" onclick="cerrar()">Cancelar</button>
+      <button class="primary" onclick="guardar()">Guardar</button>
+    </div>
   </div>
 </div>
 
 <script>
 const API =
-"https://script.google.com/macros/s/AKfycbyqukiXC5BZKB4iR45zH1gFWDF1Nxk5DfNADr1YZz2W5Gue86hyoBIBsgk-KH5vPy8F/exec";
+"https://script.google.com/macros/s/AKfycby1URmcArIhn8s49kfI4_U_2YVlyHymcLYZqtHAE2OQK_e6PN6LVMHyab9enR_CIi5J/exec";
 
+let DATA=[];   // datos completos
+let VIEW=[];   // datos filtrados
 let modo="crear";
 
-/* TOKEN */
 function getToken(){
   const t=localStorage.getItem("token");
-  if(!t){ alert("Sesión inválida"); location.href="index.html"; }
+  if(!t){
+    alert("Sesión inválida");
+    location.href="index.html";
+  }
   return t;
 }
 
-/* LISTAR → GET */
+/* LISTAR */
 function cargar(){
   fetch(API+"?action=listarModulos")
     .then(r=>r.json())
     .then(res=>{
-      tabla.innerHTML="";
-      if(!res.data.length){
-        tabla.innerHTML=`<tr><td colspan="7">Sin módulos</td></tr>`;
-        return;
-      }
-      res.data.forEach(m=>{
-        tabla.innerHTML+=`
-        <tr>
-          <td>${m[0]}</td>
-          <td>${m[1]}</td>
-          <td>${m[2]}</td>
-          <td>${m[3]}</td>
-          <td>${m[4]}</td>
-          <td>${m[5]}</td>
-          <td>
-            <button class="edit" onclick='editar(${JSON.stringify(m)})'>Editar</button>
-            <button class="delete" onclick='eliminar("${m[0]}")'>Eliminar</button>
-          </td>
-        </tr>`;
-      });
+      DATA = Array.isArray(res.data)?res.data:[];
+      VIEW = [...DATA];
+      render();
     });
 }
 
+/* RENDER */
+function render(){
+  renderTable(VIEW);
+  renderCards(VIEW);
+}
+
+function renderTable(arr){
+  const tb=document.getElementById("tabla");
+  tb.innerHTML="";
+  if(!arr.length){
+    tb.innerHTML=`<tr><td colspan="7">Sin módulos</td></tr>`;
+    return;
+  }
+  arr.forEach(m=>{
+    tb.innerHTML+=`
+      <tr>
+        <td>${m[0]}</td>
+        <td>${m[1]}</td>
+        <td>${m[2]}</td>
+        <td>${m[3]}</td>
+        <td>${m[4]}</td>
+        <td>${m[5]}</td>
+        <td class="actions">
+          <button class="edit" onclick='editar(${JSON.stringify(m)})'>Editar</button>
+          <button class="delete" onclick='eliminar("${m[0]}")'>Eliminar</button>
+        </td>
+      </tr>`;
+  });
+}
+
+function renderCards(arr){
+  const c=document.getElementById("cards");
+  c.innerHTML="";
+  if(!arr.length){
+    c.innerHTML=`<div class="card">Sin módulos</div>`;
+    return;
+  }
+  arr.forEach(m=>{
+    c.innerHTML+=`
+      <div class="card">
+        <h4>${m[3]||"📁"} ${m[1]}</h4>
+        <div class="row"><b>ID:</b> ${m[0]}</div>
+        <div class="row"><b>Archivo:</b> ${m[2]}</div>
+        <div class="row"><b>Permiso:</b> ${m[4]}</div>
+        <div class="row"><b>Activo:</b> ${m[5]}</div>
+        <div class="actions">
+          <button class="edit" onclick='editar(${JSON.stringify(m)})'>Editar</button>
+          <button class="delete" onclick='eliminar("${m[0]}")'>Eliminar</button>
+        </div>
+      </div>`;
+  });
+}
+
+/* FILTROS */
+function aplicarFiltros(){
+  const q=document.getElementById("q").value.toLowerCase();
+  const fa=document.getElementById("fActivo").value;
+  VIEW = DATA.filter(m=>{
+    const match =
+      (m[1]||"").toLowerCase().includes(q) ||
+      (m[2]||"").toLowerCase().includes(q);
+    const act = (fa==="ALL") || (m[5]===fa);
+    return match && act;
+  });
+  render();
+}
+
+function mostrarTodo(){
+  q.value="";
+  fActivo.value="ALL";
+  VIEW=[...DATA];
+  render();
+}
+
+/* CRUD */
 function nuevo(){
   modo="crear";
   titulo.innerText="Nuevo módulo";
@@ -176,6 +260,8 @@ function editar(m){
   modal.classList.add("active");
 }
 
+function cerrar(){ modal.classList.remove("active"); }
+
 function guardar(){
   fetch(API,{
     method:"POST",
@@ -194,7 +280,7 @@ function guardar(){
 }
 
 function eliminar(idm){
-  if(!confirm("Eliminar módulo "+idm+"?"))return;
+  if(!confirm("Eliminar módulo "+idm+"?")) return;
   fetch(API,{
     method:"POST",
     headers:{ "Content-Type":"text/plain;charset=UTF-8" },
@@ -204,10 +290,6 @@ function eliminar(idm){
       id:idm
     })
   }).then(cargar);
-}
-
-function cerrar(){
-  modal.classList.remove("active");
 }
 </script>
 
