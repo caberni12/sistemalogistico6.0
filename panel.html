@@ -403,6 +403,7 @@ input,select{
   </div>
 </div>
 
+
 <script>
 /* ======================================================
    CONFIGURACIÓN API
@@ -548,27 +549,25 @@ function filtrar(){
 }
 
 /* ======================================================
-   MODULOS DINÁMICOS
+   MODULOS DINÁMICOS (ALINEADO A TU APPS SCRIPT)
 ====================================================== */
-async function cargarModulos(permisosUsuario=""){
+async function cargarModulos(permisosUsuario = ""){
 
   const cont = document.querySelector(".permissions");
   cont.innerHTML = "<p>Cargando módulos...</p>";
 
   try{
     const r = await fetch(API,{
-      method:"POST",
-      headers:{ "Content-Type":"text/plain;charset=UTF-8" },
-      body: JSON.stringify({
-        action:"listarModulos",
-        token:getToken()
-      })
+      method:"GET"
     });
 
     const res = await r.json();
     if(!res.ok) throw res.msg;
 
-    MODULOS = res.data || [];
+    // columnas:
+    // 0 ID | 1 NOMBRE | 2 ARCHIVO | 3 ICONO | 4 PERMISO | 5 ACTIVO
+    MODULOS = (res.data || []).filter(m => m[5] === "SI");
+
     renderModulos(MODULOS, permisosUsuario);
 
   }catch(e){
@@ -583,14 +582,17 @@ function renderModulos(lista, permisosUsuario){
 
   const activos = (permisosUsuario || "")
     .split(",")
-    .map(p=>p.trim());
+    .map(p => p.trim());
 
-  lista.forEach(m=>{
+  lista.forEach(m => {
+    const nombre  = m[1];
+    const permiso = m[4];
+
     cont.innerHTML += `
       <label>
-        <input type="checkbox" value="${m[0]}"
-          ${activos.includes(m[0]) ? "checked":""}>
-        ${m[1]}
+        <input type="checkbox" value="${permiso}"
+          ${activos.includes(permiso) ? "checked":""}>
+        ${nombre}
       </label>
     `;
   });
@@ -645,7 +647,7 @@ async function guardarUsuario(){
   if(!token) return;
 
   const permisos = [...document.querySelectorAll(".permissions input:checked")]
-    .map(c=>c.value)
+    .map(c => c.value)
     .join(",");
 
   await fetch(API,{
@@ -669,7 +671,7 @@ async function guardarUsuario(){
 
 async function eliminarUsuario(usuario){
 
-  if(!confirm("Eliminar "+usuario+" ?")) return;
+  if(!confirm("Eliminar " + usuario + " ?")) return;
 
   await fetch(API,{
     method:"POST",
