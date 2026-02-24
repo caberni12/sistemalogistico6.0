@@ -10,14 +10,19 @@
 body{margin:0;padding:20px;background:#f4f6f9;color:#333}
 
 .container{
-  max-width:1200px;margin:auto;background:#fff;border-radius:12px;
-  padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.08)
+  max-width:1200px;margin:auto;background:#fff;
+  border-radius:12px;padding:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,.08)
 }
 
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.header{
+  display:flex;justify-content:space-between;
+  align-items:center;margin-bottom:20px
+}
 .header h1{margin:0;font-size:22px}
 .header button{
-  background:#2563eb;color:#fff;border:none;padding:10px 16px;border-radius:8px;cursor:pointer
+  background:#2563eb;color:#fff;border:none;
+  padding:10px 16px;border-radius:8px;cursor:pointer
 }
 
 table{width:100%;border-collapse:collapse}
@@ -28,40 +33,68 @@ tr{border-bottom:1px solid #e5e7eb}
 
 .icono{font-size:18px}
 
-.actions button{border:none;padding:6px 10px;border-radius:6px;cursor:pointer}
+.actions button{
+  border:none;padding:6px 10px;
+  border-radius:6px;cursor:pointer
+}
 .edit{background:#22c55e;color:#fff}
 .delete{background:#ef4444;color:#fff}
 
-.badge{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.badge{
+  padding:4px 10px;border-radius:999px;
+  font-size:12px;font-weight:600
+}
 .si{background:#dcfce7;color:#166534}
 .no{background:#fee2e2;color:#991b1b}
 
+/* ===== MODAL ===== */
 .modal{
-  position:fixed;inset:0;background:rgba(0,0,0,.4);
-  display:none;justify-content:center;align-items:center;z-index:999
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.4);
+  display:none;justify-content:center;
+  align-items:center;z-index:999
 }
 .modal.active{display:flex}
 
 .modal-content{
-  background:#fff;width:100%;max-width:480px;border-radius:12px;padding:20px
+  background:#fff;width:100%;
+  max-width:480px;border-radius:12px;
+  padding:20px
 }
 
 .form-group{margin-bottom:12px}
 .form-group label{display:block;font-size:13px;margin-bottom:4px}
 .form-group input,.form-group select{
-  width:100%;padding:10px;border-radius:6px;border:1px solid #d1d5db
+  width:100%;padding:10px;
+  border-radius:6px;border:1px solid #d1d5db
 }
 
-.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.modal-actions{
+  display:flex;gap:10px;
+  justify-content:flex-end
+}
 .save{background:#2563eb;color:#fff;border:none;padding:10px 16px;border-radius:8px}
 .cancel{background:#9ca3af;color:#fff;border:none;padding:10px 16px;border-radius:8px}
 
+/* ===== RESPONSIVE REAL ===== */
 @media(max-width:700px){
-  table,thead,tbody,th,td,tr{display:block}
+  table,thead,tbody,tr,th,td{display:block;width:100%}
   thead{display:none}
-  tr{margin-bottom:15px;background:#f9fafb;padding:10px;border-radius:8px}
-  td{display:flex;justify-content:space-between;padding:6px 0}
-  td::before{content:attr(data-label);font-weight:600}
+  tr{
+    background:#f9fafb;
+    margin-bottom:15px;
+    padding:10px;
+    border-radius:8px
+  }
+  td{
+    display:flex;
+    justify-content:space-between;
+    padding:6px 0
+  }
+  td::before{
+    content:attr(data-label);
+    font-weight:600
+  }
 }
 </style>
 </head>
@@ -90,10 +123,10 @@ tr{border-bottom:1px solid #e5e7eb}
   </table>
 </div>
 
+<!-- MODAL -->
 <div class="modal" id="modal">
   <div class="modal-content">
     <h2 id="tituloModal">Nuevo Módulo</h2>
-
     <input type="hidden" id="id">
 
     <div class="form-group">
@@ -103,17 +136,17 @@ tr{border-bottom:1px solid #e5e7eb}
 
     <div class="form-group">
       <label>ARCHIVO</label>
-      <input id="archivo" placeholder="ventas.html">
+      <input id="archivo">
     </div>
 
     <div class="form-group">
       <label>ICONO</label>
-      <input id="icono" placeholder="📦">
+      <input id="icono">
     </div>
 
     <div class="form-group">
       <label>PERMISO</label>
-      <input id="permiso" placeholder="admin">
+      <input id="permiso">
     </div>
 
     <div class="form-group">
@@ -134,8 +167,8 @@ tr{border-bottom:1px solid #e5e7eb}
 <script>
 const API = "https://script.google.com/macros/s/AKfycbyqukiXC5BZKB4iR45zH1gFWDF1Nxk5DfNADr1YZz2W5Gue86hyoBIBsgk-KH5vPy8F/exec";
 
-let modo = "crear";
-let MODULOS = [];
+let modo="crear";
+let MODULOS=[];
 
 document.addEventListener("DOMContentLoaded", cargar);
 
@@ -143,43 +176,38 @@ function cargar(){
   fetch(API+"?action=listar")
     .then(r=>r.json())
     .then(data=>{
-      MODULOS = data || [];
-      tabla.innerHTML = "";
-
+      MODULOS=data||[];
+      tabla.innerHTML="";
       MODULOS.forEach((m,i)=>{
-        tabla.innerHTML += `
-          <tr>
-            <td data-label="ID">${m.id}</td>
-            <td data-label="NOMBRE">${m.nombre}</td>
-            <td data-label="ARCHIVO">${m.archivo}</td>
-            <td data-label="ICONO" class="icono">${m.icono || "📁"}</td>
-            <td data-label="PERMISO">${m.permiso}</td>
-            <td data-label="ACTIVO">
-              <span class="badge ${m.activo==="SI"?"si":"no"}">${m.activo}</span>
-            </td>
-            <td data-label="ACCIONES" class="actions">
-              <button class="edit" onclick="editar(${i})">✏️</button>
-              <button class="delete" onclick="eliminar('${m.id}')">🗑️</button>
-            </td>
-          </tr>`;
+        tabla.innerHTML+=`
+        <tr>
+          <td data-label="ID">${m.id}</td>
+          <td data-label="NOMBRE">${m.nombre}</td>
+          <td data-label="ARCHIVO">${m.archivo}</td>
+          <td data-label="ICONO" class="icono">${m.icono||"📁"}</td>
+          <td data-label="PERMISO">${m.permiso}</td>
+          <td data-label="ACTIVO">
+            <span class="badge ${m.activo==="SI"?"si":"no"}">${m.activo}</span>
+          </td>
+          <td data-label="ACCIONES" class="actions">
+            <button class="edit" onclick="editar(${i})">✏️</button>
+            <button class="delete" onclick="eliminar('${m.id}')">🗑️</button>
+          </td>
+        </tr>`;
       });
     });
 }
 
 function nuevo(){
   modo="crear";
-  id.value="";
-  nombre.value="";
-  archivo.value="";
-  icono.value="";
-  permiso.value="";
-  activo.value="SI";
+  id.value="";nombre.value="";archivo.value="";
+  icono.value="";permiso.value="";activo.value="SI";
   tituloModal.innerText="Nuevo Módulo";
   abrir();
 }
 
-function editar(index){
-  const m = MODULOS[index];
+function editar(i){
+  const m=MODULOS[i];
   modo="editar";
   id.value=m.id;
   nombre.value=m.nombre;
