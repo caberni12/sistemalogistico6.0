@@ -10,14 +10,13 @@
 body{margin:0;padding:20px;background:#f4f6f9;color:#333}
 
 .container{
-  max-width:1200px;margin:auto;background:#fff;
-  border-radius:12px;padding:20px;
-  box-shadow:0 10px 30px rgba(0,0,0,.08)
+  max-width:1200px;margin:auto;background:#fff;border-radius:12px;
+  padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.08)
 }
 
 .header{
-  display:flex;justify-content:space-between;
-  align-items:center;margin-bottom:15px;gap:10px;flex-wrap:wrap
+  display:flex;justify-content:space-between;align-items:center;
+  gap:10px;flex-wrap:wrap;margin-bottom:12px
 }
 .header h1{margin:0;font-size:22px}
 .header .buttons{display:flex;gap:10px}
@@ -48,48 +47,31 @@ tr{border-bottom:1px solid #e5e7eb}
 .si{background:#dcfce7;color:#166534}
 .no{background:#fee2e2;color:#991b1b}
 
-/* Loader */
-.loader{
-  text-align:center;
-  padding:20px;
-  font-weight:600;
-  display:none;
+.loader,.empty{
+  text-align:center;padding:20px;font-weight:600;display:none
 }
+.empty{color:#64748b}
 
-/* Sin datos */
-.empty{
-  text-align:center;
-  padding:20px;
-  color:#64748b;
-  font-weight:600;
-  display:none;
-}
-
-/* Modal */
+/* MODAL */
 .modal{
   position:fixed;inset:0;background:rgba(0,0,0,.4);
   display:none;justify-content:center;align-items:center;z-index:999
 }
 .modal.active{display:flex}
-
 .modal-content{
   background:#fff;width:100%;max-width:480px;
   border-radius:12px;padding:20px
 }
-
 .form-group{margin-bottom:12px}
 .form-group label{display:block;font-size:13px;margin-bottom:4px}
 .form-group input,.form-group select{
-  width:100%;padding:10px;border-radius:6px;
-  border:1px solid #d1d5db
+  width:100%;padding:10px;border-radius:6px;border:1px solid #d1d5db
 }
-
-.modal-actions{
-  display:flex;gap:10px;justify-content:flex-end
-}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
 .save{background:#2563eb;color:#fff}
 .cancel{background:#9ca3af;color:#fff}
 
+/* RESPONSIVE REAL */
 @media(max-width:700px){
   table,thead,tbody,tr,th,td{display:block;width:100%}
   thead{display:none}
@@ -137,12 +119,12 @@ tr{border-bottom:1px solid #e5e7eb}
     <input type="hidden" id="id">
 
     <div class="form-group"><label>NOMBRE</label><input id="nombre"></div>
-    <div class="form-group"><label>ARCHIVO</label><input id="archivo"></div>
-    <div class="form-group"><label>ICONO</label><input id="icono"></div>
-    <div class="form-group"><label>PERMISO</label><input id="permiso"></div>
+    <div class="form-group"><label>ARCHIVO</label><input id="archivo" placeholder="ventas.html"></div>
+    <div class="form-group"><label>ICONO</label><input id="icono" placeholder="📦"></div>
+    <div class="form-group"><label>PERMISO</label><input id="permiso" placeholder="admin"></div>
     <div class="form-group">
       <label>ACTIVO</label>
-      <select id="activo"><option>SI</option><option>NO</option></select>
+      <select id="activo"><option value="SI">SI</option><option value="NO">NO</option></select>
     </div>
 
     <div class="modal-actions">
@@ -153,9 +135,10 @@ tr{border-bottom:1px solid #e5e7eb}
 </div>
 
 <script>
-const API="https://script.google.com/macros/s/AKfycbyqukiXC5BZKB4iR45zH1gFWDF1Nxk5DfNADr1YZz2W5Gue86hyoBIBsgk-KH5vPy8F/exec";
-let modo="crear";
-let MODULOS=[];
+const API = "https://script.google.com/macros/s/AKfycbyqukiXC5BZKB4iR45zH1gFWDF1Nxk5DfNADr1YZz2W5Gue86hyoBIBsgk-KH5vPy8F/exec";
+
+let modo = "crear";
+let MODULOS = [];
 
 document.addEventListener("DOMContentLoaded", cargar);
 
@@ -164,59 +147,65 @@ function cargar(){
   empty.style.display="none";
   tabla.innerHTML="";
 
-  fetch(API+"?action=listar")
-    .then(r=>r.json())
-    .then(data=>{
-      loader.style.display="none";
-      MODULOS=data||[];
+  fetch(API + "?action=listar")
+    .then(r => r.text())           // ← robusto ante HTML/no-JSON
+    .then(txt => {
+      let data;
+      try { data = JSON.parse(txt); }
+      catch(e){ throw new Error("Respuesta no JSON"); }
 
-      if(MODULOS.length===0){
+      loader.style.display="none";
+      MODULOS = Array.isArray(data) ? data : [];
+
+      if(MODULOS.length === 0){
         empty.style.display="block";
+        empty.innerText = "No hay módulos registrados";
         return;
       }
 
       MODULOS.forEach((m,i)=>{
-        tabla.innerHTML+=`
-        <tr>
-          <td data-label="ID">${m.id}</td>
-          <td data-label="NOMBRE">${m.nombre}</td>
-          <td data-label="ARCHIVO">${m.archivo}</td>
-          <td data-label="ICONO" class="icono">${m.icono||"📁"}</td>
-          <td data-label="PERMISO">${m.permiso}</td>
-          <td data-label="ACTIVO">
-            <span class="badge ${m.activo==="SI"?"si":"no"}">${m.activo}</span>
-          </td>
-          <td data-label="ACCIONES" class="actions">
-            <button class="edit" onclick="editar(${i})">✏️</button>
-            <button class="delete" onclick="eliminar('${m.id}')">🗑️</button>
-          </td>
-        </tr>`;
+        tabla.innerHTML += `
+          <tr>
+            <td data-label="ID">${m.id ?? ""}</td>
+            <td data-label="NOMBRE">${m.nombre ?? ""}</td>
+            <td data-label="ARCHIVO">${m.archivo ?? ""}</td>
+            <td data-label="ICONO" class="icono">${m.icono || "📁"}</td>
+            <td data-label="PERMISO">${m.permiso ?? ""}</td>
+            <td data-label="ACTIVO">
+              <span class="badge ${m.activo==="SI"?"si":"no"}">${m.activo ?? ""}</span>
+            </td>
+            <td data-label="ACCIONES" class="actions">
+              <button class="edit" onclick="editar(${i})">✏️</button>
+              <button class="delete" onclick="eliminar('${m.id}')">🗑️</button>
+            </td>
+          </tr>`;
       });
     })
-    .catch(()=>{
+    .catch(err=>{
       loader.style.display="none";
       empty.style.display="block";
-      empty.innerText="Error al cargar información";
+      empty.innerText = "Error al cargar información";
+      console.error("ERROR:", err);
     });
 }
 
 function nuevo(){
   modo="crear";
-  id.value="";nombre.value="";archivo.value="";
-  icono.value="";permiso.value="";activo.value="SI";
+  id.value=""; nombre.value=""; archivo.value="";
+  icono.value=""; permiso.value=""; activo.value="SI";
   tituloModal.innerText="Nuevo Módulo";
   abrir();
 }
 
 function editar(i){
-  const m=MODULOS[i];
+  const m = MODULOS[i];
   modo="editar";
-  id.value=m.id;
-  nombre.value=m.nombre;
-  archivo.value=m.archivo;
-  icono.value=m.icono;
-  permiso.value=m.permiso;
-  activo.value=m.activo;
+  id.value = m.id ?? "";
+  nombre.value = m.nombre ?? "";
+  archivo.value = m.archivo ?? "";
+  icono.value = m.icono ?? "";
+  permiso.value = m.permiso ?? "";
+  activo.value = m.activo ?? "SI";
   tituloModal.innerText="Editar Módulo";
   abrir();
 }
@@ -224,29 +213,29 @@ function editar(i){
 function guardar(){
   fetch(API,{
     method:"POST",
-    body:JSON.stringify({
-      action:modo,
-      id:id.value,
-      nombre:nombre.value,
-      archivo:archivo.value,
-      icono:icono.value,
-      permiso:permiso.value,
-      activo:activo.value
+    body: JSON.stringify({
+      action: modo,
+      id: id.value,
+      nombre: nombre.value,
+      archivo: archivo.value,
+      icono: icono.value,
+      permiso: permiso.value,
+      activo: activo.value
     })
-  }).then(()=>{cerrar();cargar();});
+  }).then(()=>{ cerrar(); cargar(); });
 }
 
 function eliminar(idm){
   if(confirm("¿Eliminar módulo?")){
     fetch(API,{
       method:"POST",
-      body:JSON.stringify({action:"eliminar",id:idm})
+      body: JSON.stringify({ action:"eliminar", id:idm })
     }).then(()=>cargar());
   }
 }
 
-function abrir(){modal.classList.add("active")}
-function cerrar(){modal.classList.remove("active")}
+function abrir(){ modal.classList.add("active"); }
+function cerrar(){ modal.classList.remove("active"); }
 </script>
 
 </body>
