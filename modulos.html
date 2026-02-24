@@ -6,74 +6,114 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
+/* ================= BASE ================= */
 *{box-sizing:border-box;font-family:system-ui,-apple-system,BlinkMacSystemFont}
 body{margin:0;padding:16px;background:#f4f6f9;color:#111}
 
+/* ================= CONTAINER ================= */
 .container{
-  max-width:1200px;margin:auto;background:#fff;border-radius:12px;
+  max-width:1200px;margin:auto;background:#fff;border-radius:14px;
   padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.08)
 }
 
-/* HEADER */
+/* ================= HEADER ================= */
 .header{
-  display:flex;flex-wrap:wrap;gap:10px;
+  display:flex;flex-wrap:wrap;gap:12px;
   align-items:center;justify-content:space-between
 }
 .header h2{margin:0}
 
-/* CONTROLS */
+/* ================= CONTROLS ================= */
 .controls{
   display:flex;flex-wrap:wrap;gap:8px;align-items:center
 }
 .controls input,.controls select{
-  padding:8px 10px;border-radius:8px;border:1px solid #e5e7eb
+  padding:9px 12px;border-radius:10px;border:1px solid #e5e7eb;
+  outline:none
 }
 .controls button{
-  padding:8px 12px;border-radius:8px;border:none;
-  cursor:pointer;font-weight:600
+  padding:9px 14px;border-radius:10px;border:none;
+  cursor:pointer;font-weight:600;transition:.2s
 }
 .primary{background:#2563eb;color:#fff}
+.primary:hover{background:#1d4ed8}
 .secondary{background:#64748b;color:#fff}
+.secondary:hover{background:#475569}
 
-/* TABLE */
-table{width:100%;border-collapse:collapse;margin-top:12px}
+/* ================= TABLE ================= */
+table{width:100%;border-collapse:collapse;margin-top:14px}
 thead{background:#f1f5f9}
-th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:14px}
+th,td{padding:12px;border-bottom:1px solid #e5e7eb;font-size:14px}
 .actions button{
-  margin-right:6px;border:none;border-radius:6px;
-  padding:6px 8px;cursor:pointer
+  margin-right:6px;border:none;border-radius:8px;
+  padding:7px 10px;font-weight:600;cursor:pointer;transition:.2s
 }
 .edit{background:#22c55e;color:#fff}
+.edit:hover{background:#16a34a}
 .delete{background:#ef4444;color:#fff}
+.delete:hover{background:#dc2626}
 
-/* CARDS (MOBILE) */
-.cards{display:none;margin-top:12px;gap:10px}
+/* ================= CARDS MOBILE ================= */
+.cards{display:none;margin-top:14px;gap:12px}
 .card{
   background:#f9fafb;border:1px solid #e5e7eb;
-  border-radius:12px;padding:12px
+  border-radius:14px;padding:14px
 }
 .card h4{margin:0 0 6px}
 .card .row{font-size:14px;margin:4px 0}
-.card .actions{margin-top:8px}
+.card .actions{margin-top:10px}
 
-/* MODAL */
+/* ================= MODAL ================= */
 .modal{
-  position:fixed;inset:0;background:rgba(0,0,0,.4);
+  position:fixed;inset:0;background:rgba(0,0,0,.45);
   display:none;justify-content:center;align-items:center;z-index:999
 }
 .modal.active{display:flex}
 .modal-content{
-  background:#fff;width:100%;max-width:420px;
-  border-radius:12px;padding:16px
+  background:#fff;width:100%;max-width:440px;
+  border-radius:16px;padding:18px;
+  animation:scaleIn .15s ease
 }
-.form-group{margin-bottom:10px}
+@keyframes scaleIn{
+  from{transform:scale(.95);opacity:.7}
+  to{transform:scale(1);opacity:1}
+}
+.form-group{margin-bottom:12px}
 .form-group label{display:block;font-size:13px;margin-bottom:4px}
 .form-group input,.form-group select{
-  width:100%;padding:8px;border-radius:6px;border:1px solid #d1d5db
+  width:100%;padding:10px;border-radius:10px;
+  border:1px solid #d1d5db
 }
-.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+.modal-actions{
+  display:flex;gap:10px;justify-content:flex-end;margin-top:10px
+}
+.btn-cancel{
+  background:#e5e7eb;color:#111;
+  padding:10px 16px;border-radius:12px;
+  font-weight:600;border:none;cursor:pointer
+}
+.btn-cancel:hover{background:#d1d5db}
+.btn-save{
+  background:linear-gradient(135deg,#2563eb,#1d4ed8);
+  color:#fff;padding:10px 18px;border-radius:12px;
+  font-weight:700;border:none;cursor:pointer
+}
+.btn-save:hover{opacity:.9}
 
-/* RESPONSIVE */
+/* ================= LOADER ================= */
+.loader{
+  position:fixed;inset:0;background:rgba(255,255,255,.75);
+  display:none;align-items:center;justify-content:center;z-index:2000
+}
+.loader.active{display:flex}
+.spinner{
+  width:54px;height:54px;border-radius:50%;
+  border:5px solid #c7d2fe;border-top-color:#2563eb;
+  animation:spin 1s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ================= RESPONSIVE ================= */
 @media(max-width:768px){
   table{display:none}
   .cards{display:grid}
@@ -87,7 +127,7 @@ th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:14p
   <div class="header">
     <h2>Módulos</h2>
     <div class="controls">
-      <input id="q" placeholder="Buscar por nombre o archivo">
+      <input id="q" placeholder="Buscar módulo">
       <select id="fActivo">
         <option value="ALL">Activo: Todos</option>
         <option value="SI">Activo: SI</option>
@@ -100,7 +140,7 @@ th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:14p
     </div>
   </div>
 
-  <!-- TABLA DESKTOP -->
+  <!-- TABLA -->
   <table>
     <thead>
       <tr>
@@ -111,7 +151,7 @@ th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:14p
     <tbody id="tabla"></tbody>
   </table>
 
-  <!-- TARJETAS MÓVIL -->
+  <!-- TARJETAS -->
   <div id="cards" class="cards"></div>
 </div>
 
@@ -131,38 +171,42 @@ th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:14p
     </div>
 
     <div class="modal-actions">
-      <button class="secondary" onclick="cerrar()">Cancelar</button>
-      <button class="primary" onclick="guardar()">Guardar</button>
+      <button class="btn-cancel" onclick="cerrar()">Cancelar</button>
+      <button class="btn-save" onclick="guardar()">Guardar</button>
     </div>
   </div>
+</div>
+
+<!-- LOADER -->
+<div id="loader" class="loader">
+  <div class="spinner"></div>
 </div>
 
 <script>
 const API =
 "https://script.google.com/macros/s/AKfycby1URmcArIhn8s49kfI4_U_2YVlyHymcLYZqtHAE2OQK_e6PN6LVMHyab9enR_CIi5J/exec";
 
-let DATA=[];   // datos completos
-let VIEW=[];   // datos filtrados
-let modo="crear";
+let DATA=[], VIEW=[], modo="crear";
+
+function showLoader(v){ loader.classList.toggle("active",v); }
 
 function getToken(){
   const t=localStorage.getItem("token");
-  if(!t){
-    alert("Sesión inválida");
-    location.href="index.html";
-  }
+  if(!t){ alert("Sesión inválida"); location.href="index.html"; }
   return t;
 }
 
 /* LISTAR */
 function cargar(){
+  showLoader(true);
   fetch(API+"?action=listarModulos")
     .then(r=>r.json())
     .then(res=>{
       DATA = Array.isArray(res.data)?res.data:[];
       VIEW = [...DATA];
       render();
-    });
+    })
+    .finally(()=>showLoader(false));
 }
 
 /* RENDER */
@@ -170,23 +214,17 @@ function render(){
   renderTable(VIEW);
   renderCards(VIEW);
 }
-
 function renderTable(arr){
-  const tb=document.getElementById("tabla");
-  tb.innerHTML="";
+  tabla.innerHTML="";
   if(!arr.length){
-    tb.innerHTML=`<tr><td colspan="7">Sin módulos</td></tr>`;
+    tabla.innerHTML=`<tr><td colspan="7">Sin módulos</td></tr>`;
     return;
   }
   arr.forEach(m=>{
-    tb.innerHTML+=`
+    tabla.innerHTML+=`
       <tr>
-        <td>${m[0]}</td>
-        <td>${m[1]}</td>
-        <td>${m[2]}</td>
-        <td>${m[3]}</td>
-        <td>${m[4]}</td>
-        <td>${m[5]}</td>
+        <td>${m[0]}</td><td>${m[1]}</td><td>${m[2]}</td>
+        <td>${m[3]}</td><td>${m[4]}</td><td>${m[5]}</td>
         <td class="actions">
           <button class="edit" onclick='editar(${JSON.stringify(m)})'>Editar</button>
           <button class="delete" onclick='eliminar("${m[0]}")'>Eliminar</button>
@@ -194,16 +232,14 @@ function renderTable(arr){
       </tr>`;
   });
 }
-
 function renderCards(arr){
-  const c=document.getElementById("cards");
-  c.innerHTML="";
+  cards.innerHTML="";
   if(!arr.length){
-    c.innerHTML=`<div class="card">Sin módulos</div>`;
+    cards.innerHTML=`<div class="card">Sin módulos</div>`;
     return;
   }
   arr.forEach(m=>{
-    c.innerHTML+=`
+    cards.innerHTML+=`
       <div class="card">
         <h4>${m[3]||"📁"} ${m[1]}</h4>
         <div class="row"><b>ID:</b> ${m[0]}</div>
@@ -220,49 +256,36 @@ function renderCards(arr){
 
 /* FILTROS */
 function aplicarFiltros(){
-  const q=document.getElementById("q").value.toLowerCase();
-  const fa=document.getElementById("fActivo").value;
+  const qq=q.value.toLowerCase();
+  const fa=fActivo.value;
   VIEW = DATA.filter(m=>{
-    const match =
-      (m[1]||"").toLowerCase().includes(q) ||
-      (m[2]||"").toLowerCase().includes(q);
-    const act = (fa==="ALL") || (m[5]===fa);
-    return match && act;
+    const hit=(m[1]||"").toLowerCase().includes(qq)||(m[2]||"").toLowerCase().includes(qq);
+    const act=(fa==="ALL")||(m[5]===fa);
+    return hit && act;
   });
   render();
 }
-
 function mostrarTodo(){
-  q.value="";
-  fActivo.value="ALL";
-  VIEW=[...DATA];
-  render();
+  q.value=""; fActivo.value="ALL";
+  VIEW=[...DATA]; render();
 }
 
 /* CRUD */
 function nuevo(){
-  modo="crear";
-  titulo.innerText="Nuevo módulo";
+  modo="crear"; titulo.innerText="Nuevo módulo";
   id.value=nombre.value=archivo.value=icono.value=permiso.value="";
-  activo.value="SI";
-  modal.classList.add("active");
+  activo.value="SI"; modal.classList.add("active");
 }
-
 function editar(m){
-  modo="editar";
-  titulo.innerText="Editar módulo";
-  id.value=m[0];
-  nombre.value=m[1];
-  archivo.value=m[2];
-  icono.value=m[3];
-  permiso.value=m[4];
-  activo.value=m[5];
+  modo="editar"; titulo.innerText="Editar módulo";
+  id.value=m[0]; nombre.value=m[1]; archivo.value=m[2];
+  icono.value=m[3]; permiso.value=m[4]; activo.value=m[5];
   modal.classList.add("active");
 }
-
 function cerrar(){ modal.classList.remove("active"); }
 
 function guardar(){
+  showLoader(true);
   fetch(API,{
     method:"POST",
     headers:{ "Content-Type":"text/plain;charset=UTF-8" },
@@ -281,14 +304,11 @@ function guardar(){
 
 function eliminar(idm){
   if(!confirm("Eliminar módulo "+idm+"?")) return;
+  showLoader(true);
   fetch(API,{
     method:"POST",
     headers:{ "Content-Type":"text/plain;charset=UTF-8" },
-    body:JSON.stringify({
-      action:"eliminarModulo",
-      token:getToken(),
-      id:idm
-    })
+    body:JSON.stringify({ action:"eliminarModulo", token:getToken(), id:idm })
   }).then(cargar);
 }
 </script>
