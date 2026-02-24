@@ -39,6 +39,17 @@ tr{border-bottom:1px solid #e5e7eb}
 .edit{background:#22c55e;color:#fff}
 .delete{background:#ef4444;color:#fff}
 
+.msg{
+  margin-top:15px;
+  padding:12px;
+  border-radius:8px;
+  background:#f8fafc;
+  border:1px solid #e5e7eb;
+  font-size:13px;
+  white-space:pre-wrap;
+}
+
+/* MODAL */
 .modal{
   position:fixed;inset:0;background:rgba(0,0,0,.4);
   display:none;justify-content:center;align-items:center;z-index:999
@@ -90,6 +101,9 @@ tr{border-bottom:1px solid #e5e7eb}
     </thead>
     <tbody id="tabla"></tbody>
   </table>
+
+  <!-- MENSAJE / DEBUG -->
+  <div id="msg" class="msg" style="display:none"></div>
 </div>
 
 <!-- MODAL -->
@@ -101,27 +115,22 @@ tr{border-bottom:1px solid #e5e7eb}
       <label>ID</label>
       <input id="m_id">
     </div>
-
     <div class="form-group">
       <label>NOMBRE</label>
       <input id="m_nombre">
     </div>
-
     <div class="form-group">
       <label>ARCHIVO</label>
       <input id="m_archivo" placeholder="ventas.html">
     </div>
-
     <div class="form-group">
       <label>ICONO</label>
       <input id="m_icono" placeholder="📦">
     </div>
-
     <div class="form-group">
       <label>PERMISO</label>
       <input id="m_permiso" placeholder="admin">
     </div>
-
     <div class="form-group">
       <label>ACTIVO</label>
       <select id="m_activo">
@@ -148,7 +157,7 @@ let modulos = [];
 let modo = "crear";
 
 /* ======================================================
-   SEGURIDAD
+   SEGURIDAD (IGUAL QUE USUARIOS)
 ====================================================== */
 function getToken(){
   const token = localStorage.getItem("token");
@@ -161,7 +170,7 @@ function getToken(){
 }
 
 /* ======================================================
-   CARGAR MODULOS (MISMO PATRÓN QUE USUARIOS)
+   CARGAR MODULOS
 ====================================================== */
 async function cargarModulos(){
 
@@ -169,6 +178,8 @@ async function cargarModulos(){
   if(!token) return;
 
   btnLoad.innerText = "Cargando…";
+  msg.style.display="none";
+  tabla.innerHTML = "";
 
   try{
     const r = await fetch(API,{
@@ -181,32 +192,42 @@ async function cargarModulos(){
     });
 
     const res = await r.json();
-    if(!res.ok) throw res.msg;
+
+    /* DEBUG VISIBLE */
+    msg.style.display="block";
+    msg.innerText = "Respuesta backend:\n" + JSON.stringify(res,null,2);
+
+    if(!res.ok){
+      throw res.msg || "Error backend";
+    }
 
     modulos = Array.isArray(res.data) ? res.data : [];
+
+    if(!modulos.length){
+      tabla.innerHTML =
+        `<tr><td colspan="7">Sin módulos</td></tr>`;
+      return;
+    }
+
     renderModulos(modulos);
 
   }catch(err){
     console.error(err);
     tabla.innerHTML =
       `<tr><td colspan="7">Error al cargar módulos</td></tr>`;
+    msg.style.display="block";
+    msg.innerText = "ERROR:\n" + err;
   }
 
   btnLoad.innerText = "Cargar módulos";
 }
 
 /* ======================================================
-   RENDER
+   RENDER (ARRAY POR ÍNDICE, IGUAL QUE USUARIOS)
 ====================================================== */
 function renderModulos(data){
 
   tabla.innerHTML = "";
-
-  if(!data.length){
-    tabla.innerHTML =
-      `<tr><td colspan="7">Sin módulos</td></tr>`;
-    return;
-  }
 
   data.forEach(m => {
 
