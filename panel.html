@@ -403,7 +403,6 @@ input,select{
   </div>
 </div>
 
-
 <script>
 /* ======================================================
    CONFIGURACIÓN API
@@ -416,7 +415,6 @@ const API =
 ====================================================== */
 let usuarios = [];
 let modo = "crear";
-let MODULOS = [];
 
 /* ======================================================
    HELPERS
@@ -464,6 +462,7 @@ async function cargarUsuarios(){
     renderUsuarios(usuarios);
 
   }catch(e){
+    console.error(e);
     tablaUsuarios.innerHTML =
       `<tr><td colspan="6">Error al cargar usuarios</td></tr>`;
     mobileList.innerHTML = "";
@@ -549,7 +548,7 @@ function filtrar(){
 }
 
 /* ======================================================
-   MODULOS DINÁMICOS (ALINEADO A TU APPS SCRIPT)
+   MODULOS DINÁMICOS (CORRECTO CON TU doGet)
 ====================================================== */
 async function cargarModulos(permisosUsuario = ""){
 
@@ -557,20 +556,21 @@ async function cargarModulos(permisosUsuario = ""){
   cont.innerHTML = "<p>Cargando módulos...</p>";
 
   try{
-    const r = await fetch(API,{
-      method:"GET"
-    });
+    const r = await fetch(
+      API + "?action=listarModulos"
+    );
 
     const res = await r.json();
-    if(!res.ok) throw res.msg;
+    if(!res.ok) throw "Respuesta inválida";
 
     // columnas:
     // 0 ID | 1 NOMBRE | 2 ARCHIVO | 3 ICONO | 4 PERMISO | 5 ACTIVO
-    MODULOS = (res.data || []).filter(m => m[5] === "SI");
+    const modulos = (res.data || []).filter(m => m[5] === "SI");
 
-    renderModulos(MODULOS, permisosUsuario);
+    renderModulos(modulos, permisosUsuario);
 
   }catch(e){
+    console.error(e);
     cont.innerHTML = "<p>Error al cargar módulos</p>";
   }
 }
@@ -584,7 +584,7 @@ function renderModulos(lista, permisosUsuario){
     .split(",")
     .map(p => p.trim());
 
-  lista.forEach(m => {
+  lista.forEach(m=>{
     const nombre  = m[1];
     const permiso = m[4];
 
