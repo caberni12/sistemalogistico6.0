@@ -333,9 +333,7 @@ input,select{
       <input id="busqueda" placeholder="Buscar usuario, nombre o rol" oninput="filtrar()">
       <button class="btn-success" onclick="abrirCrear()">+ Crear Usuario</button>
       
-      <button class="btn-primary" onclick="abrirCrearModulo()">+ Crear Módulo</button>
-      <button class="btn-primary" onclick="abrirListaModulos()"> Ver Módulos
-      </button>
+    
       
 
     </div>
@@ -403,57 +401,6 @@ input,select{
   </div>
 </div>
 
-<!-- ================= MODAL LISTA MODULOS ================= -->
-<div class="modal" id="modalListaModulos">
-  <div class="modal-content">
-    <h3>Módulos del Sistema</h3>
-
-    <table style="width:100%;border-collapse:collapse">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Archivo</th>
-          <th>Permiso</th>
-          <th>Activo</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="tablaModulos">
-        <tr><td colspan="5">Cargando…</td></tr>
-      </tbody>
-    </table>
-
-<div id="modulosCards" class="modulos-cards"></div>
-
-
-    <div class="footer-btns">
-      <button class="btn-danger" onclick="cerrarListaModulos()">Cerrar</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- ================= MODAL MÓDULO ================= -->
-<div class="modal" id="modalModulo">
-  <div class="modal-content">
-    <h3>Crear Módulo</h3>
-
-    <input id="m_nombre" placeholder="Nombre del módulo">
-    <input id="m_archivo" placeholder="Archivo HTML (ej: index2.html)">
-    <input id="m_icono" placeholder="Icono (ej: 📋)">
-    <input id="m_permiso" placeholder="Permiso (ej: inventario)">
-
-    <select id="m_activo">
-      <option value="SI">ACTIVO</option>
-      <option value="NO">INACTIVO</option>
-    </select>
-
-    <div class="footer-btns">
-      <button class="btn-success" onclick="guardarModulo()">Guardar</button>
-      <button class="btn-danger" onclick="cerrarModulo()">Cancelar</button>
-    </div>
-  </div>
-</div>
 
 <script>
   /* ======================================================
