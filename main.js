@@ -2,7 +2,7 @@
    CONFIG
 ===================================================== */
 const API =
-"https://script.google.com/macros/s/AKfycbwb_QOTIe9u1-LDSP1psBGeGkJ8gtC-n-e9H7E-rhf0gd2jU29sw-xHhXXp65OwQB_U/exec";
+"https://script.google.com/macros/s/AKfycbyqukiXC5BZKB4iR45zH1gFWDF1Nxk5DfNADr1YZz2W5Gue86hyoBIBsgk-KH5vPy8F/exec";
 
 let USER_IP = "cargando...";
 let MODULO_ACTIVO = null;
