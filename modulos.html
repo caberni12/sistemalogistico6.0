@@ -17,15 +17,19 @@ body{margin:0;padding:20px;background:#f4f6f9;color:#333}
 
 .header{
   display:flex;justify-content:space-between;
-  align-items:center;margin-bottom:20px
+  align-items:center;margin-bottom:15px;gap:10px;flex-wrap:wrap
 }
 .header h1{margin:0;font-size:22px}
-.header button{
-  background:#2563eb;color:#fff;border:none;
-  padding:10px 16px;border-radius:8px;cursor:pointer
-}
+.header .buttons{display:flex;gap:10px}
 
-table{width:100%;border-collapse:collapse}
+button{
+  border:none;padding:10px 16px;border-radius:8px;
+  cursor:pointer;font-weight:600
+}
+.primary{background:#2563eb;color:#fff}
+.secondary{background:#64748b;color:#fff}
+
+table{width:100%;border-collapse:collapse;margin-top:10px}
 thead{background:#f1f5f9}
 th,td{padding:12px;text-align:left;font-size:14px}
 th{font-weight:600}
@@ -33,10 +37,7 @@ tr{border-bottom:1px solid #e5e7eb}
 
 .icono{font-size:18px}
 
-.actions button{
-  border:none;padding:6px 10px;
-  border-radius:6px;cursor:pointer
-}
+.actions button{padding:6px 10px;border-radius:6px}
 .edit{background:#22c55e;color:#fff}
 .delete{background:#ef4444;color:#fff}
 
@@ -47,54 +48,54 @@ tr{border-bottom:1px solid #e5e7eb}
 .si{background:#dcfce7;color:#166534}
 .no{background:#fee2e2;color:#991b1b}
 
-/* ===== MODAL ===== */
+/* Loader */
+.loader{
+  text-align:center;
+  padding:20px;
+  font-weight:600;
+  display:none;
+}
+
+/* Sin datos */
+.empty{
+  text-align:center;
+  padding:20px;
+  color:#64748b;
+  font-weight:600;
+  display:none;
+}
+
+/* Modal */
 .modal{
-  position:fixed;inset:0;
-  background:rgba(0,0,0,.4);
-  display:none;justify-content:center;
-  align-items:center;z-index:999
+  position:fixed;inset:0;background:rgba(0,0,0,.4);
+  display:none;justify-content:center;align-items:center;z-index:999
 }
 .modal.active{display:flex}
 
 .modal-content{
-  background:#fff;width:100%;
-  max-width:480px;border-radius:12px;
-  padding:20px
+  background:#fff;width:100%;max-width:480px;
+  border-radius:12px;padding:20px
 }
 
 .form-group{margin-bottom:12px}
 .form-group label{display:block;font-size:13px;margin-bottom:4px}
 .form-group input,.form-group select{
-  width:100%;padding:10px;
-  border-radius:6px;border:1px solid #d1d5db
+  width:100%;padding:10px;border-radius:6px;
+  border:1px solid #d1d5db
 }
 
 .modal-actions{
-  display:flex;gap:10px;
-  justify-content:flex-end
+  display:flex;gap:10px;justify-content:flex-end
 }
-.save{background:#2563eb;color:#fff;border:none;padding:10px 16px;border-radius:8px}
-.cancel{background:#9ca3af;color:#fff;border:none;padding:10px 16px;border-radius:8px}
+.save{background:#2563eb;color:#fff}
+.cancel{background:#9ca3af;color:#fff}
 
-/* ===== RESPONSIVE REAL ===== */
 @media(max-width:700px){
   table,thead,tbody,tr,th,td{display:block;width:100%}
   thead{display:none}
-  tr{
-    background:#f9fafb;
-    margin-bottom:15px;
-    padding:10px;
-    border-radius:8px
-  }
-  td{
-    display:flex;
-    justify-content:space-between;
-    padding:6px 0
-  }
-  td::before{
-    content:attr(data-label);
-    font-weight:600
-  }
+  tr{background:#f9fafb;margin-bottom:15px;padding:10px;border-radius:8px}
+  td{display:flex;justify-content:space-between;padding:6px 0}
+  td::before{content:attr(data-label);font-weight:600}
 }
 </style>
 </head>
@@ -104,8 +105,14 @@ tr{border-bottom:1px solid #e5e7eb}
 <div class="container">
   <div class="header">
     <h1>Módulos del Sistema</h1>
-    <button onclick="nuevo()">+ Nuevo Módulo</button>
+    <div class="buttons">
+      <button class="secondary" onclick="cargar()">Cargar información</button>
+      <button class="primary" onclick="nuevo()">+ Nuevo Módulo</button>
+    </div>
   </div>
+
+  <div class="loader" id="loader">Cargando información…</div>
+  <div class="empty" id="empty">No hay módulos registrados</div>
 
   <table>
     <thead>
@@ -129,32 +136,13 @@ tr{border-bottom:1px solid #e5e7eb}
     <h2 id="tituloModal">Nuevo Módulo</h2>
     <input type="hidden" id="id">
 
-    <div class="form-group">
-      <label>NOMBRE</label>
-      <input id="nombre">
-    </div>
-
-    <div class="form-group">
-      <label>ARCHIVO</label>
-      <input id="archivo">
-    </div>
-
-    <div class="form-group">
-      <label>ICONO</label>
-      <input id="icono">
-    </div>
-
-    <div class="form-group">
-      <label>PERMISO</label>
-      <input id="permiso">
-    </div>
-
+    <div class="form-group"><label>NOMBRE</label><input id="nombre"></div>
+    <div class="form-group"><label>ARCHIVO</label><input id="archivo"></div>
+    <div class="form-group"><label>ICONO</label><input id="icono"></div>
+    <div class="form-group"><label>PERMISO</label><input id="permiso"></div>
     <div class="form-group">
       <label>ACTIVO</label>
-      <select id="activo">
-        <option value="SI">SI</option>
-        <option value="NO">NO</option>
-      </select>
+      <select id="activo"><option>SI</option><option>NO</option></select>
     </div>
 
     <div class="modal-actions">
@@ -165,19 +153,28 @@ tr{border-bottom:1px solid #e5e7eb}
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbyqukiXC5BZKB4iR45zH1gFWDF1Nxk5DfNADr1YZz2W5Gue86hyoBIBsgk-KH5vPy8F/exec";
-
+const API="https://script.google.com/macros/s/AKfycbyqukiXC5BZKB4iR45zH1gFWDF1Nxk5DfNADr1YZz2W5Gue86hyoBIBsgk-KH5vPy8F/exec";
 let modo="crear";
 let MODULOS=[];
 
 document.addEventListener("DOMContentLoaded", cargar);
 
 function cargar(){
+  loader.style.display="block";
+  empty.style.display="none";
+  tabla.innerHTML="";
+
   fetch(API+"?action=listar")
     .then(r=>r.json())
     .then(data=>{
+      loader.style.display="none";
       MODULOS=data||[];
-      tabla.innerHTML="";
+
+      if(MODULOS.length===0){
+        empty.style.display="block";
+        return;
+      }
+
       MODULOS.forEach((m,i)=>{
         tabla.innerHTML+=`
         <tr>
@@ -195,6 +192,11 @@ function cargar(){
           </td>
         </tr>`;
       });
+    })
+    .catch(()=>{
+      loader.style.display="none";
+      empty.style.display="block";
+      empty.innerText="Error al cargar información";
     });
 }
 
