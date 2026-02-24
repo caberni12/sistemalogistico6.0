@@ -479,71 +479,96 @@ input,select{
   /* ======================================================
      RENDER
   ====================================================== */
+  
   function renderUsuarios(data){
-  
-    tablaUsuarios.innerHTML = "";
-    mobileList.innerHTML = "";
-  
-    if(!data.length){
-      tablaUsuarios.innerHTML =
-        `<tr><td colspan="6">Sin usuarios</td></tr>`;
-      return;
-    }
-  
-    data.forEach(u => {
-  
-      const usuario  = u[1];
-      const pass     = u[2];
-      const nombre   = u[3];
-      const rol      = u[4];
-      const activo   = u[5];
-      const permisos = u[6] || "";
-  
-      tablaUsuarios.innerHTML += `
-        <tr>
-          <td>${usuario}</td>
-          <td>${pass}</td>
-          <td>${nombre}</td>
-          <td>${rol}</td>
-          <td>${activo}</td>
-          <td>
-            <button class="btn-edit"
-              onclick="editarUsuario(
-                '${usuario}','${pass}','${nombre}',
-                '${rol}','${activo}','${permisos}'
-              )">
-              Editar
-            </button>
-            <button class="btn-danger"
-              onclick="eliminarUsuario('${usuario}')">
-              Eliminar
-            </button>
-          </td>
-        </tr>`;
-  
-      mobileList.innerHTML += `
-        <div class="mobile-card">
-          <h4>${nombre}</h4>
-          <p><b>Usuario:</b> ${usuario}</p>
-          <p><b>Rol:</b> ${rol}</p>
-          <div class="mobile-actions">
-            <button class="btn-edit"
-              onclick="editarUsuario(
-                '${usuario}','${pass}','${nombre}',
-                '${rol}','${activo}','${permisos}'
-              )">
-              Editar
-            </button>
-            <button class="btn-danger"
-              onclick="eliminarUsuario('${usuario}')">
-              Eliminar
-            </button>
-          </div>
-        </div>`;
-    });
+
+  tablaUsuarios.innerHTML = "";
+  mobileList.innerHTML = "";
+
+  if(!data.length){
+    tablaUsuarios.innerHTML =
+      `<tr><td colspan="6">Sin usuarios</td></tr>`;
+    return;
   }
-  
-  /* ======================================================
+
+  data.forEach(u => {
+
+    const usuario  = u[1];
+    const pass     = u[2];
+    const nombre   = u[3];
+    const rol      = u[4];
+    const activo   = u[5];
+    const permisos = u[6] || "";
+
+    // ===== BADGE ESTADO (JS PURO)
+    const estadoHTML = activo === "SI"
+      ? `<span style="
+          background:#d4f5e2;
+          color:#0a7a3a;
+          padding:4px 10px;
+          border-radius:12px;
+          font-size:12px;
+          font-weight:600;
+          display:inline-block;">
+          ACTIVO
+        </span>`
+      : `<span style="
+          background:#f8d7da;
+          color:#842029;
+          padding:4px 10px;
+          border-radius:12px;
+          font-size:12px;
+          font-weight:600;
+          display:inline-block;">
+          INACTIVO
+        </span>`;
+
+    // ===== TABLA
+    tablaUsuarios.innerHTML += `
+      <tr>
+        <td>${usuario}</td>
+        <td>${pass}</td>
+        <td>${nombre}</td>
+        <td>${rol}</td>
+        <td>${estadoHTML}</td>
+        <td>
+          <button class="btn-edit"
+            onclick="editarUsuario(
+              '${usuario}','${pass}','${nombre}',
+              '${rol}','${activo}','${permisos}'
+            )">
+            Editar
+          </button>
+          <button class="btn-danger"
+            onclick="eliminarUsuario('${usuario}')">
+            Eliminar
+          </button>
+        </td>
+      </tr>`;
+
+    // ===== TARJETA MÓVIL
+    mobileList.innerHTML += `
+      <div class="mobile-card">
+        <h4>${nombre}</h4>
+        <p><b>Usuario:</b> ${usuario}</p>
+        <p><b>Rol:</b> ${rol}</p>
+        <p><b>Estado:</b> ${estadoHTML}</p>
+        <div class="mobile-actions">
+          <button class="btn-edit"
+            onclick="editarUsuario(
+              '${usuario}','${pass}','${nombre}',
+              '${rol}','${activo}','${permisos}'
+            )">
+            Editar
+          </button>
+          <button class="btn-danger"
+            onclick="eliminarUsuario('${usuario}')">
+            Eliminar
+          </button>
+        </div>
+      </div>`;
+  });
+}        ======================================================
      FILTRO
   ====================================================== */
   function filtrar(){
