@@ -27,10 +27,14 @@ function crearIconoAuto(rot = 0){
       <div style="width:48px;height:48px;transform:rotate(${rot}deg)">
         <svg viewBox="0 0 512 512" width="48" height="48" fill="#2563eb">
           <path d="M256 32c-17.7 0-32 14.3-32 32v32H96
-          c-35.3 0-64 28.7-64 64v160c0 35.3 28.7 64 64 64h16v48
-          c0 17.7 14.3 32 32 32h16c17.7 0 32-14.3 32-32v-48h128
-          v48c0 17.7 14.3 32 32 32h16c17.7 0 32-14.3 32-32v-48h16
-          c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H288V64
+          c-35.3 0-64 28.7-64 64v160
+          c0 35.3 28.7 64 64 64h16v48
+          c0 17.7 14.3 32 32 32h16
+          c17.7 0 32-14.3 32-32v-48h128
+          v48c0 17.7 14.3 32 32 32h16
+          c17.7 0 32-14.3 32-32v-48h16
+          c35.3 0 64-28.7 64-64V160
+          c0-35.3-28.7-64-64-64H288V64
           c0-17.7-14.3-32-32-32z"/>
         </svg>
       </div>`
@@ -58,24 +62,9 @@ function toggleMenu(){
 }
 
 /* =====================================================
-   LOADER
-===================================================== */
-function iniciarProgreso(){
-  document.getElementById("loadingOverlay")?.style.setProperty("display","flex");
-  document.getElementById("progressBar")?.style.setProperty("display","block");
-}
-
-function finalizarProgreso(){
-  document.getElementById("loadingOverlay")?.style.setProperty("display","none");
-  document.getElementById("progressBar")?.style.setProperty("display","none");
-}
-
-/* =====================================================
    INIT
 ===================================================== */
 document.addEventListener("DOMContentLoaded", async ()=>{
-
-  iniciarProgreso();
 
   if(typeof validarSesionGlobal !== "function"){
     cerrarSesion();
@@ -91,63 +80,62 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   document.getElementById("usuario").textContent =
     `👤 ${user.nombre} · ${user.rol}`;
 
+  /* 🔹 EMPRESA DINÁMICA (CLAVE) */
+  if(typeof cargarEmpresaActiva === "function"){
+    cargarEmpresaActiva();   // ← viene de empresa.js
+  }
+
   await cargarMenu(user);
 
   iniciarMapa();
   obtenerIP();
   iniciarReloj();
-  crearBotFlotante();
-
-  finalizarProgreso();
+  crearBotFuncional();
 });
 
 /* =====================================================
    MENÚ DINÁMICO
 ===================================================== */
 async function cargarMenu(user){
-  try{
-    const r = await fetch(`${API}?action=listarModulos`);
-    const res = await r.json();
-    const cont = document.getElementById("menuModulos");
-    cont.innerHTML="";
+  const r = await fetch(`${API}?action=listarModulos`);
+  const res = await r.json();
+  const cont = document.getElementById("menuModulos");
+  cont.innerHTML="";
 
-    if(!Array.isArray(res.data)) return;
+  if(!Array.isArray(res.data)) return;
 
-    res.data.forEach(m=>{
-      const [id,nombre,archivo,icono,permiso,activo] = m;
-      if(activo!=="SI") return;
-      if(user.rol!=="ADMIN" && !user.permisos.includes(permiso)) return;
+  res.data.forEach(m=>{
+    const [id,nombre,archivo,icono,permiso,activo] = m;
+    if(activo!=="SI") return;
+    if(user.rol!=="ADMIN" && !user.permisos.includes(permiso)) return;
 
-      const d=document.createElement("div");
-      d.className="menu-item";
-      d.innerHTML=`${icono||"📦"} ${nombre}`;
-      d.onclick=()=>{
-        abrirModulo(archivo,nombre);
-        toggleMenu();
-      };
-      cont.appendChild(d);
-    });
-  }catch(e){
-    console.error("Error menú:",e);
-  }
+    const d=document.createElement("div");
+    d.className="menu-item";
+    d.innerHTML=`${icono||"📦"} ${nombre}`;
+    d.onclick=()=>{
+      abrirModulo(archivo,nombre);
+      toggleMenu();
+    };
+    cont.appendChild(d);
+  });
 }
 
 /* =====================================================
    VISOR
 ===================================================== */
 function abrirModulo(url,titulo){
-  document.getElementById("viewer").style.display="flex";
-  document.getElementById("frame").src=url;
-  document.getElementById("viewerTitle").textContent=titulo;
+  viewer.style.display="flex";
+  frame.src=url;
+  viewerTitle.textContent=titulo;
 }
 
 function volver(){
-  document.getElementById("viewer").style.display="none";
-  document.getElementById("frame").src="";
+  viewer.style.display="none";
+  frame.src="";
 }
 
 /* =====================================================
-   MAPA + GPS + RADIO
+   MAPA + GPS
 ===================================================== */
 function iniciarMapa(){
   if(!navigator.geolocation || !window.L) return;
@@ -165,39 +153,26 @@ function iniciarMapa(){
     MARCADOR.setLatLng([lat,lng]);
     MARCADOR.setIcon(speed>2 ? crearIconoAuto(heading) : ICONO_ESTATICO);
 
-    const conn = navigator.connection || {};
-    let radio = conn.effectiveType==="4g" ? 150 :
-                conn.effectiveType==="3g" ? 100 : 60;
-
-    CIRCULO.setLatLng([lat,lng]);
-    CIRCULO.setRadius(radio);
-
     actualizarRedVelocidad(speed);
-
-    if(Date.now()-LAST_GEOCODE>15000){
-      LAST_GEOCODE = Date.now();
-      actualizarDireccion(lat,lng);
-    }
+    actualizarDireccion(lat,lng);
   },
-  err=>{
-    console.warn("GPS error",err);
-  },
-  { enableHighAccuracy:true, maximumAge:2000, timeout:10000 });
+  ()=>{},
+  { enableHighAccuracy:true });
 }
 
 /* =====================================================
    DIRECCIÓN
 ===================================================== */
 async function actualizarDireccion(lat,lng){
+  if(Date.now()-LAST_GEOCODE<15000) return;
+  LAST_GEOCODE=Date.now();
   try{
-    const r = await fetch(
+    const r=await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
     );
-    const d = await r.json();
-    document.getElementById("dirTexto").textContent = d.display_name || "—";
-  }catch{
-    document.getElementById("dirTexto").textContent="—";
-  }
+    const d=await r.json();
+    document.getElementById("dirTexto").textContent=d.display_name||"—";
+  }catch{}
 }
 
 /* =====================================================
@@ -232,14 +207,14 @@ function iniciarReloj(){
 }
 
 /* =====================================================
-   BOT FLOTANTE (NO BLOQUEANTE)
+   🤖 BOT FUNCIONAL REAL
 ===================================================== */
-function crearBotFlotante(){
-  if(document.getElementById("botFlotante")) return;
+function crearBotFuncional(){
+  if(document.getElementById("botEstado")) return;
 
   const bot=document.createElement("div");
-  bot.id="botFlotante";
-  bot.textContent="🤖";
+  bot.id="botEstado";
+  bot.innerHTML="🤖";
   bot.style.cssText=`
     position:fixed;bottom:20px;right:20px;
     width:56px;height:56px;border-radius:50%;
@@ -248,11 +223,16 @@ function crearBotFlotante(){
     font-size:24px;cursor:pointer;
     box-shadow:0 10px 30px rgba(0,0,0,.4);
     z-index:9999`;
+
   bot.onclick=()=>{
-    console.info("Estado:",
-      navigator.connection?.effectiveType,
-      document.getElementById("speedTexto").textContent);
+    alert(
+      "📊 Estado del sistema\n\n"+
+      "Red: "+(navigator.connection?.effectiveType||"—")+"\n"+
+      "IP: "+USER_IP+"\n"+
+      "Velocidad: "+document.getElementById("speedTexto").textContent
+    );
   };
+
   document.body.appendChild(bot);
 }
 
