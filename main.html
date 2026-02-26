@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Panel Logístico Integrado</title>
+<title>Panel Logístico</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- LEAFLET -->
@@ -13,16 +13,13 @@
 /* ================= VARIABLES ================= */
 :root{
  --bg:#f1f5f9;
- --card:#ffffff;
- --hover:#f8fafc;
  --text:#0f172a;
  --muted:#64748b;
- --accent:#14b8a6;
  --primary:#3b82f6;
  --danger:#ef4444;
  --border:#e2e8f0;
  --radius:12px;
- --header-h:72px;
+ --header-h:76px;
 }
 
 /* ================= RESET ================= */
@@ -35,38 +32,22 @@ html,body{
  height:100%;
  background:var(--bg);
  color:var(--text);
+ overflow:hidden;
 }
 
-/* ================= BOTONES ================= */
-button{
- border:none;
- border-radius:var(--radius);
- padding:10px 14px;
- font-weight:600;
- cursor:pointer;
- display:inline-flex;
- align-items:center;
- gap:6px;
-}
-.btn-primary{background:var(--primary);color:#fff}
-.btn-danger{background:var(--danger);color:#fff}
-.btn-ghost{background:#fff;border:1px solid var(--border)}
-
-/* ================= HEADER (GLOBAL) ================= */
+/* ================= HEADER ================= */
 header{
  position:fixed;
- top:0;
- left:0;
- right:0;
+ top:0; left:0; right:0;
  height:var(--header-h);
- background:#fff;
+ background:#ffffff;
  display:flex;
  align-items:center;
  justify-content:space-between;
- padding:0 16px;
+ padding:8px 14px;
  border-bottom:1px solid var(--border);
- box-shadow:0 4px 14px rgba(0,0,0,.06);
- z-index:1000;
+ box-shadow:0 4px 12px rgba(0,0,0,.08);
+ z-index:2000;
 }
 
 .header-left{
@@ -76,35 +57,49 @@ header{
 }
 
 #btnMenu{
- width:40px;
- height:40px;
- background:linear-gradient(135deg,#2dd4bf,#0d9488);
+ width:42px;
+ height:42px;
+ border-radius:12px;
+ background:#14b8a6;
  color:#fff;
  font-size:20px;
+ border:none;
 }
 
-#btnVolver{
- display:none;
+.header-title{
+ display:flex;
+ flex-direction:column;
+ line-height:1.1;
 }
 
-header h1{
- margin:0;
- font-size:16px;
+#tituloSistema{
+ font-size:15px;
  font-weight:700;
+ margin:0;
 }
 
 .header-info{
  font-size:12px;
  color:var(--muted);
- line-height:1.2;
 }
 
 .header-right{
  display:flex;
- gap:10px;
+ gap:8px;
 }
 
-/* ================= MENU LATERAL ================= */
+button{
+ border:none;
+ border-radius:var(--radius);
+ padding:8px 12px;
+ font-weight:600;
+ cursor:pointer;
+}
+
+.btn-primary{background:var(--primary);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+
+/* ================= MENU ================= */
 .menu-lateral{
  position:fixed;
  top:0;
@@ -114,7 +109,7 @@ header h1{
  background:#fff;
  box-shadow:6px 0 28px rgba(0,0,0,.18);
  transition:.3s;
- z-index:1500;
+ z-index:3000;
  display:flex;
  flex-direction:column;
 }
@@ -127,6 +122,7 @@ header h1{
  display:flex;
  justify-content:space-between;
 }
+
 .menu-items{
  padding:14px;
  display:flex;
@@ -134,57 +130,69 @@ header h1{
  gap:10px;
  overflow-y:auto;
 }
+
 .menu-item{
  padding:14px;
  border-radius:12px;
- background:var(--hover);
+ background:#f8fafc;
  font-weight:600;
  cursor:pointer;
 }
 
 /* ================= CONTENIDO ================= */
 #content{
- position:relative;
- margin-top:var(--header-h);
- height:calc(100vh - var(--header-h));
+ position:absolute;
+ top:var(--header-h);
+ left:0;
+ right:0;
+ bottom:0;
+ background:#ddd;
 }
 
 /* ================= MAPA ================= */
 #mapa{
  width:100%;
  height:100%;
+ z-index:1;
 }
 
-/* Controles Leaflet abajo derecha */
+/* Leaflet controles: abajo derecha */
 .leaflet-top{
  top:auto !important;
- bottom:90px !important;
- right:12px !important;
+ bottom:110px !important;
+ right:14px !important;
  left:auto !important;
+ z-index:500;
 }
 
-/* ================= DASHBOARD MAPA ================= */
+/* ================= DASHBOARD ================= */
 #dashboardMapa{
  position:absolute;
  bottom:16px;
  left:16px;
  right:16px;
- background:#fff;
+ background:#ffffff;
  border-radius:16px;
  padding:14px;
- font-size:12px;
- box-shadow:0 10px 24px rgba(0,0,0,.22);
- z-index:500;
+ font-size:13px;
+ box-shadow:0 12px 26px rgba(0,0,0,.25);
+ z-index:1000;
 }
 
-/* ================= VISOR DE MÓDULOS ================= */
+#dashboardMapa strong{
+ display:block;
+ margin-bottom:2px;
+}
+
+/* ================= VISOR ================= */
 #viewer{
  display:none;
  position:absolute;
  inset:0;
  background:#fff;
- z-index:800;
+ z-index:1500;
 }
+
 #viewer iframe{
  width:100%;
  height:100%;
@@ -195,31 +203,40 @@ header h1{
 #loadingOverlay{
  position:fixed;
  inset:0;
- background:rgba(241,245,249,.9);
+ background:rgba(241,245,249,.92);
  display:none;
  align-items:center;
  justify-content:center;
- z-index:2000;
+ z-index:4000;
 }
+
 #progressBar{
  position:fixed;
- top:0;
- left:0;
+ top:0; left:0;
  height:3px;
  width:0%;
  background:var(--primary);
- z-index:2001;
+ z-index:4001;
 }
 
 /* ================= MOBILE ================= */
 @media(max-width:768px){
+ :root{ --header-h:110px; }
+
  header{
   flex-direction:column;
   align-items:flex-start;
-  height:auto;
-  padding:8px 16px;
+  gap:6px;
  }
- :root{ --header-h:120px; }
+
+ .header-right{
+  width:100%;
+  justify-content:space-between;
+ }
+
+ #dashboardMapa{
+  font-size:12px;
+ }
 }
 </style>
 </head>
@@ -234,7 +251,7 @@ header h1{
 <div id="menuLateral" class="menu-lateral">
  <div class="menu-header">
   <span>📦 Panel de Gestión</span>
-  <button class="btn-ghost" onclick="toggleMenu()">✕</button>
+  <button onclick="toggleMenu()">✕</button>
  </div>
  <div id="menuModulos" class="menu-items"></div>
 </div>
@@ -243,13 +260,12 @@ header h1{
 <header>
  <div class="header-left">
   <button id="btnMenu" onclick="toggleMenu()">☰</button>
-  <button id="btnVolver" class="btn-ghost" onclick="volver()">⬅</button>
-  <h1 id="tituloSistema">Panel Logístico</h1>
- </div>
-
- <div class="header-info">
-  <div id="usuario"></div>
-  <div id="conexionInfo"></div>
+  <div class="header-title">
+   <h1 id="tituloSistema">Panel Logístico</h1>
+   <div class="header-info">
+    <span id="usuario"></span> · <span id="conexionInfo"></span>
+   </div>
+  </div>
  </div>
 
  <div class="header-right">
@@ -266,9 +282,12 @@ header h1{
 
  <!-- DASHBOARD -->
  <div id="dashboardMapa">
-  <div><strong>📍 Dirección:</strong> <span id="dirTexto">Detectando…</span></div>
-  <div><strong>🌐 Red:</strong> <span id="netTexto">Detectando…</span></div>
-  <div><strong>🚀 Velocidad:</strong> <span id="speedTexto">0 km/h</span></div>
+  <strong>📍 Dirección</strong>
+  <span id="dirTexto">Detectando…</span><br><br>
+  <strong>🌐 Red</strong>
+  <span id="netTexto">Detectando…</span><br><br>
+  <strong>🚀 Velocidad</strong>
+  <span id="speedTexto">0 km/h</span>
  </div>
 
  <!-- VISOR -->
